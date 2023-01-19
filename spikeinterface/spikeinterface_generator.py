@@ -85,8 +85,10 @@ class SpikeInterfaceGenerator(SequentialGenerator):
 
         start_frame = index_frame - self.pre_frame - self.pre_post_omission - 1
         end_frame = index_frame + self.post_frame - self.pre_post_omission + 2
-        full_traces = self.recording.get_traces(start_frame=start_frame, end_frame=end_frame).atype("float32")
-
+        full_traces = self.recording.get_traces(start_frame=start_frame, end_frame=end_frame).astype("float32")
+        
+        if full_traces.shape[0] == 0:
+            print(f"Error! {index_frame}-{start_frame}-{end_frame}", flush=True)
         output_frame_index = self.pre_frame + self.pre_post_omission
         mask = np.ones(len(full_traces), dtype=bool)
         mask = np.ones(len(full_traces), dtype=bool)
@@ -103,3 +105,7 @@ class SpikeInterfaceGenerator(SequentialGenerator):
         output_full[0] = data_output_3d.swapaxes(0, 1).swapaxes(1, 2)
 
         return input_full, output_full
+
+
+    def reshape_output(self, output):
+        return output.squeeze().reshape(-1, self.recording.get_num_channels())    
