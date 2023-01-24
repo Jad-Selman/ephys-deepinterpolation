@@ -83,8 +83,8 @@ class SpikeInterfaceGenerator(SequentialGenerator):
         )
         output_full = np.zeros([1, self.desired_shape[0], self.desired_shape[1], 1], dtype="float32")
 
-        start_frame = index_frame - self.pre_frame - self.pre_post_omission - 1
-        end_frame = index_frame + self.post_frame - self.pre_post_omission + 2
+        start_frame = index_frame - self.pre_frame - self.pre_post_omission
+        end_frame = index_frame + self.post_frame + self.pre_post_omission + 1
         full_traces = self.recording.get_traces(start_frame=start_frame, end_frame=end_frame).astype("float32")
         
         if full_traces.shape[0] == 0:
