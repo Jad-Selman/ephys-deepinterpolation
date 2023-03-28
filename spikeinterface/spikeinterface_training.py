@@ -2,8 +2,10 @@ import json
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+import shutil
 
 from tensorflow import keras
+import tensorflow as tf
 
 import spikeinterface.extractors as se
 import spikeinterface.preprocessing as spre
@@ -15,28 +17,45 @@ from deepinterpolation.generic import ClassLoader
 # the generator is in the "spikeinterface_generator.py"
 from spikeinterface_generator import SpikeInterfaceGenerator
 
+print(tf.config.list_physical_devices('GPU'))
 
 # Define training and testing constants (@Jad you can gradually increase this)
 TRAINING_START_S = 0
-TRAINING_END_S = 10
-TESTING_START_S = 100
-TESTING_END_S = 101
+TRAINING_END_S = 2
+TESTING_START_S = 70
+TESTING_END_S = 70.1
 DESIRED_SHAPE = (192, 2)
+FILTER = "hp" # "hp", "bp"
 
 
 pre_frame = 30
 post_frame = 30
 pre_post_omission = 1
 
+n_jobs = 16
+
 
 ### Load NP2 dataset (and preprocess)
 
 # example of data generation in spike interface
-folder_path = "/home/alessio/Documents/data/allen/npix-open-ephys/595262_2022-02-22_16-47-26/"
+folder_path = Path("/home/buccino/data/Neuropixels2.0_Recording/open-ephys-np2/595262_2022-02-22_16-47-26/")
+output_folder = Path("recording_saved")
+if output_folder.is_dir():
+    shutil.rmtree(output_folder)
 recording = se.read_openephys(folder_path)
 
-rec_f = spre.bandpass_filter(recording)
+assert FILTER in ("no", "hp", "bp"), "Wrong filter option!"
+if FILTER == "hp":
+    rec_f = spre.highpass_filter(recording)
+    rec_f = rec_f.save(folder=output_folder, n_jobs=n_jobs, chunk_duration="1s", progress_bar=True)
+elif FILTER == "bp":
+    rec_f = spre.bandpass_filter(recording)
+    rec_f = rec_f.save(folder=output_folder, n_jobs=n_jobs, chunk_duration="1s", progress_bar=True)
+else:
+    rec_f = recording
+
 rec_norm = spre.zscore(rec_f)
+
 
 ### Test SpikeInterfaceGenerator behavior
 
@@ -56,7 +75,7 @@ start_frame_test = int(TESTING_START_S * rec_norm.sampling_frequency)
 end_frame_test = int(TESTING_END_S * rec_norm.sampling_frequency)
 
 # Training (from core_trainor class)
-output_folder = Path("test_training")
+output_folder = Path("test_training_bp_filter_t20_v0.5s_assertion")
 output_folder.mkdir(exist_ok=True)
 
 training_data_generator = SpikeInterfaceGenerator(rec_norm, zscore=False, 
@@ -99,7 +118,7 @@ training_params["run_uid"] = "first_test"
 training_params["nb_gpus"] = 1
 training_params["type"] = "trainer"
 training_params["steps_per_epoch"] = 10
-training_params["period_save"] = 5
+training_params["period_save"] = 100
 training_params["apply_learning_decay"] = 0
 training_params["nb_times_through_data"] = 1
 training_params["learning_rate"] = 0.0001
