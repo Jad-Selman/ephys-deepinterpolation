@@ -32,23 +32,24 @@ def import_tf(use_gpu=True, disable_tf_logger=True, memory_gpu=None):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         tf.get_logger().setLevel('ERROR')
 
-    tf.compat.v1.disable_eager_execution()
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        if memory_gpu is None:
-            try:
-                # Currently, memory growth needs to be the same across GPUs
+    if use_gpu:
+        tf.compat.v1.disable_eager_execution()
+        gpus = tf.config.list_physical_devices('GPU')
+        if gpus:
+            if memory_gpu is None:
+                try:
+                    # Currently, memory growth needs to be the same across GPUs
+                    for gpu in gpus:
+                        print("Setting memory growth")
+                        tf.config.experimental.set_memory_growth(gpu, True)
+                except RuntimeError as e:
+                    # Memory growth must be set before GPUs have been initialized
+                    print(e)
+            else:
                 for gpu in gpus:
-                    print("Setting memory growth")
-                    tf.config.experimental.set_memory_growth(gpu, True)
-            except RuntimeError as e:
-                # Memory growth must be set before GPUs have been initialized
-                print(e)
-        else:
-            for gpu in gpus:
-                tf.config.set_logical_device_configuration(
-                    gpus[0],
-                    [tf.config.LogicalDeviceConfiguration(memory_limit=memory_gpu)])
+                    tf.config.set_logical_device_configuration(
+                        gpus[0],
+                        [tf.config.LogicalDeviceConfiguration(memory_limit=memory_gpu)])
     return tf
 
 
