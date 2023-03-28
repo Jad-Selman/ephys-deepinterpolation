@@ -2,6 +2,7 @@ import tempfile
 import json
 import numpy as np
 
+from spikeinterface.core.core_tools import check_json
 import spikeinterface.preprocessing as spre
 
 from deepinterpolation.generator_collection import SequentialGenerator
@@ -45,7 +46,7 @@ class SpikeInterfaceGenerator(SequentialGenerator):
 
         json_path = tempfile.mktemp(suffix=".json")
         with open(json_path, "w") as f:
-            json.dump(sequential_generator_params, f)
+            json.dump(check_json(sequential_generator_params), f)
         super().__init__(json_path)
 
         self._update_end_frame(self.total_samples)
@@ -169,7 +170,7 @@ class SpikeInterfaceRecordingSegmentGenerator(SequentialGenerator):
 
         json_path = tempfile.mktemp(suffix=".json")
         with open(json_path, "w") as f:
-            json.dump(sequential_generator_params, f)
+            json.dump(check_json(sequential_generator_params), f)
         super().__init__(json_path)
 
         self._update_end_frame(self.total_samples)
