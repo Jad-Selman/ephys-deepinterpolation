@@ -1,24 +1,5 @@
 # Project: Investigation and Extension of DeepInterpolation to Denoise High-density Electrophysiology Recordings
 
-### Main supervisors:
------------------
-Alessio Buccino - Allen Institute for Neural Dynamics
-Jerome Lecoq - Allen Institute for Brain Science
-
-### Other co-supervisors:
----------------------
-Josh Siegle - Allen Institute for Neural Dynamics
-Kyu Hyun Lee - University of California, San Francisco
-Ryan Ly - Lawrence Berkley National Laboratory
-
-### Affiliated supervisor:
---------------------
-Alessandra Pedrocchi - Politecnico di Milano
-
-### Student Invastigator:
----------------------
-Jad Selman - Politecnico di Milano
-
 
 ## Project Description
 ---------------------
@@ -87,17 +68,17 @@ The github repository of spikeinterface: [link](https://github.com/SpikeInterfac
 
 ## Repository Organization
 
-The repository is organized in 3 main folders: Src (source), scripts and notebooks.
+The repository is organized in 3 main folders: `src` (source), `scripts` and `notebooks`.
 
-- src: is the folder containing the source code "deepinterpolation_recording.py" and "spikeinterface_generator.py", both of which contains the main classes and functions that are the essential backbone for rebuilding input data recordings -essential for the generation of a trained model that reconstructs the input data according to a desired shape -, and for the application of adjusted deepinterpolation code to be applied on the input data. These classes and functions are called into the used scripts and notebooks.
+- `src`: is the folder containing the source code "deepinterpolation_recording.py" and "spikeinterface_generator.py", both of which contains the main classes and functions that are the essential backbone for rebuilding input data recordings -essential for the generation of a trained model that reconstructs the input data according to a desired shape -, and for the application of adjusted deepinterpolation code to be applied on the input data. These classes and functions are called into the used scripts and notebooks.
 
-- scripts: contaning python scripts (each discribed with an internal readme note).
+- `scripts`: contaning python scripts (each discribed with an internal readme note).
   
-- notebooks: containing jupyter notebooks that in addition to other outcomes, produce the same output as the scripts in "scripts" folder, but more commented and in step-by-step fashion.   
+- `notebooks`: containing jupyter notebooks that in addition to other outcomes, produce the same output as the scripts in "scripts" folder, but more commented and in step-by-step fashion.   
 
 Note: it is important to keep in mind that the both the scripts and notebooks assume that the input data, as well as the generated models and output are added into a folder named "data", that is present within the same directory containing both "scripts" and "notebooks" folders. It is important for the user to create such folder that should be named "data".
 
-## installation
+## Installation
 
 As this project relies on both deepinterpolation and spikeinterface, their dependencies must be installed.
 
@@ -112,3 +93,18 @@ to be completed ...
 ## How to reproduce
 
 to be completed ...
+
+## Contributors
+
+### Principal Investigator:
+---------------------
+Jad Selman - Politecnico di Milano
+
+### Main supervisors:
+-----------------
+Alessio Buccino - Allen Institute for Neural Dynamics
+Jerome Lecoq - Allen Institute for Brain Science
+
+### Affiliated supervisor:
+--------------------
+Alessandra Pedrocchi - Politecnico di Milano
