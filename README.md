@@ -46,7 +46,7 @@ The objectives can be listed as following:
 To accomplish the aforementioned objectives, and to fulfill the aim of reproducibility and interoperability, the project is publicly published as a github repository entitled: ephys-deepinterpolation.
 
 
-** More information about deepinterpolation can be found in the following cited paper:
+More information about deepinterpolation can be found in the following cited paper:
     
     - Lecoq, J., Oliver, M., Siegle, J.H. et al. Removing independent noise in systems neuroscience data using      DeepInterpolation. Nat Methods 18, 1401–1408 (2021).
     https://doi.org/10.1038/s41592-021-01285-2
@@ -55,7 +55,7 @@ The github repository of Deepinterpolation [link](https://github.com/AllenInstit
 
 
 
-** More information about spikeinterface can be found on the following cited paper:
+More information about spikeinterface can be found on the following cited paper:
     
     Alessio P Buccino, Cole L Hurwitz, Samuel Garcia, Jeremy Magland, Joshua H Siegle, Roger Hurwitz, Matthias H Hennig (2020) SpikeInterface, a unified framework for spike sorting eLife 9:e61834
     https://doi.org/10.7554/eLife.61834
