@@ -52,7 +52,6 @@ def train_di_model(recording, session, filter_option, train_start_s, train_end_s
     model_folder = data_folder / "models" / session
     model_folder.mkdir(exist_ok=True, parents=True)
     trained_model_folder = model_folder / model_name
-    trained_model_folder.mkdir(exist_ok=True)
 
     pre_frame = di_kwargs["pre_frame"]
     post_frame = di_kwargs["post_frame"]
@@ -73,45 +72,18 @@ def train_di_model(recording, session, filter_option, train_start_s, train_end_s
     rec_processed = rec_f
     rec_norm = spre.zscore(rec_processed)
 
-    ### Perform training
+    ### Define params
     start_frame_training = int(train_start_s * rec_norm.sampling_frequency)
     end_frame_training = int(train_end_s * rec_norm.sampling_frequency)
     start_frame_test = int(test_start_s * rec_norm.sampling_frequency) 
     end_frame_test = int(test_end_s * rec_norm.sampling_frequency)
-
-    # Training (from core_trainor class)
-    training_data_generator = SpikeInterfaceGenerator(rec_norm, zscore=False, 
-                                                      pre_frame=pre_frame, post_frame=post_frame,
-                                                      pre_post_omission=pre_post_omission,
-                                                      start_frame=start_frame_training,
-                                                      end_frame=end_frame_training,
-                                                      desired_shape=desired_shape)
-    test_data_generator = SpikeInterfaceGenerator(rec_norm, zscore=False,
-                                                  pre_frame=pre_frame, post_frame=post_frame,
-                                                  pre_post_omission=pre_post_omission,
-                                                  start_frame=start_frame_test,
-                                                  end_frame=end_frame_test,
-                                                  steps_per_epoch=-1,
-                                                  desired_shape=desired_shape)
-
 
     # Those are parameters used for the network topology
     network_params = dict()
     network_params["type"] = "network"
     # Name of network topology in the collection
     network_params["name"] = "unet_single_ephys_1024"
-
-    network_json_path = trained_model_folder / "network_params.json"
-    with open(network_json_path, "w") as f:
-        json.dump(network_params, f)
-
-    network_obj = ClassLoader(network_json_path)
-    data_network = network_obj.find_and_build()(network_json_path)
-
     training_params = dict()
-    training_params["loss"] = "mean_absolute_error"
-
-    training_params["model_string"] = f"{network_params['name']}_{training_params['loss']}"
     training_params["output_dir"] = str(trained_model_folder)
     # We pass on the uid
     training_params["run_uid"] = "first_test"
@@ -128,19 +100,45 @@ def train_di_model(recording, session, filter_option, train_start_s, train_end_s
     training_params["loss"] = "mean_absolute_error"
     training_params["nb_workers"] = 2
     training_params["caching_validation"] = False
-
-
-    training_json_path = trained_model_folder / "training_params.json"
-    with open(training_json_path, "w") as f:
-        json.dump(training_params, f)
-
-
-    training_class = core_trainer(
-        training_data_generator, test_data_generator, data_network,
-        training_json_path
-    )
+    training_params["model_string"] = f"{network_params['name']}_{training_params['loss']}"
+    
 
     if not trained_model_folder.is_dir() or overwrite:
+        trained_model_folder.mkdir(exist_ok=True)
+
+        # Training (from core_trainor class)
+        training_data_generator = SpikeInterfaceGenerator(rec_norm, zscore=False, 
+                                                        pre_frame=pre_frame, post_frame=post_frame,
+                                                        pre_post_omission=pre_post_omission,
+                                                        start_frame=start_frame_training,
+                                                        end_frame=end_frame_training,
+                                                        desired_shape=desired_shape)
+        test_data_generator = SpikeInterfaceGenerator(rec_norm, zscore=False,
+                                                    pre_frame=pre_frame, post_frame=post_frame,
+                                                    pre_post_omission=pre_post_omission,
+                                                    start_frame=start_frame_test,
+                                                    end_frame=end_frame_test,
+                                                    steps_per_epoch=-1,
+                                                    desired_shape=desired_shape)
+
+
+        network_json_path = trained_model_folder / "network_params.json"
+        with open(network_json_path, "w") as f:
+            json.dump(network_params, f)
+
+        network_obj = ClassLoader(network_json_path)
+        data_network = network_obj.find_and_build()(network_json_path)
+
+        training_json_path = trained_model_folder / "training_params.json"
+        with open(training_json_path, "w") as f:
+            json.dump(training_params, f)
+
+
+        training_class = core_trainer(
+            training_data_generator, test_data_generator, data_network,
+            training_json_path
+        )
+
         print("created objects for training")
         training_class.run()
 
@@ -165,11 +163,19 @@ def train_di_model(recording, session, filter_option, train_start_s, train_end_s
         output_folder = deepinterpolated_folder / model_name
         if output_folder.is_dir() and overwrite:
             shutil.rmtree(output_folder)
+            rec_di = DeepInterpolatedRecording(rec_norm, model_path=model_path, pre_frames=pre_frame, 
+                                               post_frames=post_frame, pre_post_omission=pre_post_omission, 
+                                               disable_tf_logger=True,
+                                               use_gpu=use_gpu)
             rec_di_saved = rec_di.save(folder=output_folder, n_jobs=inference_n_jobs,
                                     chunk_duration=inference_chunk_duration)
         else:
-            rec_di_saved = si.load_extractor(folder=output_folder)
+            rec_di_saved = si.load_extractor(output_folder)
     else:
         rec_di_saved = rec_di
-    # TODO: Jad - do the inverse z-scoring here on the rec_di_saved!
-    return rec_processed, rec_di_saved
+
+    # apply inverse z-scoring
+    inverse_gains = 1 / rec_norm.gain
+    inverse_offset = - rec_norm.offset * inverse_gains
+    rec_di_inverse_zscore = spre.scale(rec_di_saved, gain=inverse_gains, offset=inverse_offset, dtype='float')
+    return rec_processed, rec_di_inverse_zscore

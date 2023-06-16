@@ -1,16 +1,10 @@
 #### IMPORTS #######
-import sys
 import os
-import json
 import numpy as np
 from pathlib import Path
-import matplotlib.pyplot as plt
-import shutil
-
+from numba import cuda 
 import pandas as pd
 
-from tensorflow import keras
-import tensorflow as tf
 
 # SpikeInterface
 import spikeinterface as si
@@ -131,6 +125,10 @@ for session in sessions:
         results_dict[filter_option]["recording_no_di"] = recording_no_di
         results_dict[filter_option]["recording_di"] = recording_di
 
+        # release GPU memory
+        device = cuda.get_current_device()
+        device.reset()
+
         # run spike sorting
         sorting_output_folder = data_folder / "sortings" / session
         sorting_output_folder.mkdir(parents=True, exist_ok=True)
@@ -149,7 +147,7 @@ for session in sessions:
         recording_di = results_dict[filter_option]["recording_di"]
         if (sorting_output_folder / f"di_{model_name}").is_dir() and not OVERWRITE:
             print("\t\tLoading DI sorting")
-            sorting_no_di = si.load_extractor(sorting_output_folder / f"di_{model_name}")
+            sorting_di = si.load_extractor(sorting_output_folder / f"di_{model_name}")
         else:
             print(f"\t\tSpike sorting DI with {sorter_name}")
             sorting_di = ss.run_sorter(sorter_name, recording=recording_di, 
@@ -162,10 +160,12 @@ for session in sessions:
         ## add entries to session-level results
         session_level_results.append({"session": session, "filter_option": filter_option,
                                       "di": False, "num_units": len(sorting_no_di.unit_ids),
-                                      "sorting_path": str((sorting_output_folder / f"no_di_{model_name}").absolute())})
+                                      "sorting_path": str((sorting_output_folder / f"no_di_{model_name}").absolute())},
+                                     ignore_index=True)
         session_level_results.append({"session": session, "filter_option": filter_option,
                                       "di": True, "num_units": len(sorting_di.unit_ids),
-                                      "sorting_path": str((sorting_output_folder / f"di_{model_name}").absolute())})
+                                      "sorting_path": str((sorting_output_folder / f"di_{model_name}").absolute())},
+                                     ignore_index=True)
 
         # compare outputs
         print("\t\tComparing sortings")
@@ -175,7 +175,7 @@ for session in sessions:
         matched_units = cmp.get_matching()[0]
         matched_unit_ids_no_di = matched_units.index.values.astype(int)
         matched_unit_ids_di = matched_units.values.astype(int)
-        matched_units_valid = matched_units[matched_unit_ids_di != -1]
+        matched_units_valid = matched_unit_ids_di != -1
         matched_unit_ids_no_di = matched_unit_ids_no_di[matched_units_valid]
         matched_unit_ids_di = matched_unit_ids_di[matched_units_valid]
         sorting_no_di_matched = sorting_no_di.select_units(unit_ids=matched_unit_ids_no_di)
@@ -196,7 +196,7 @@ for session in sessions:
         
         if (waveforms_folder / f"di_{model_name}").is_dir() and not OVERWRITE:
             print("\t\tLoad DI waveforms")
-            we_no_di = si.load_waveforms(waveforms_folder / f"di_{model_name}")
+            we_di = si.load_waveforms(waveforms_folder / f"di_{model_name}")
         else:
             print("\t\tCompute DI waveforms")
             we_di = si.extract_waveforms(recording_di, sorting_di_matched, 
