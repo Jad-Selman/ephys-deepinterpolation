@@ -89,7 +89,7 @@ class DeepInterpolatedRecording(BasePreprocessor):
             self.add_recording_segment(recording_segment)
 
         self._preferred_mp_context = "spawn"
-        self._kwargs = dict(recording=recording.to_dict(), model_path=model_path,
+        self._kwargs = dict(recording=recording.to_dict(), model_path=str(model_path),
                             pre_frames=pre_frames, post_frames=post_frames, pre_post_omission=pre_post_omission,
                             batch_size=batch_size, use_gpu=use_gpu, disable_tf_logger=disable_tf_logger,
                             memory_gpu=memory_gpu)
