@@ -1,0 +1,6 @@
+numpy==1.24
+protobuf==3.20.*
+tensorflow==2.7.0
+pip install git+https://github.com/AllenInstitute/deepinterpolation.git
+# we need a specific branch for SpikeInterface
+pip install git+https://github.com/alejoe91/spikeinterface.git@deepinterp#egg=spikeinterface
