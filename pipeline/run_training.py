@@ -112,7 +112,7 @@ if __name__ == "__main__":
         TRAINING_START_S = 0
         TRAINING_END_S = 20
         TESTING_START_S = 70
-        TESTING_END_S = 70.5
+        TESTING_END_S = 70.1
         OVERWRITE = False
 
     si.set_global_job_kwargs(**job_kwargs)
