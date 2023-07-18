@@ -7,6 +7,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #### IMPORTS #######
 import os
 import sys
+import shutil
 import json
 import numpy as np
 from pathlib import Path
@@ -231,3 +232,6 @@ if __name__ == "__main__":
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 recording_processed.dump_to_json(processed_folder / "processed.json", relative_to=results_folder)
                 recording_di.dump_to_json(processed_folder / f"deepinterpolated.json", relative_to=results_folder)
+
+    for json_file in json_files:
+        shutil.copy(json_file, results_folder)
