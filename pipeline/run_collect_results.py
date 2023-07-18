@@ -59,7 +59,10 @@ if __name__ == "__main__":
     sortings_output_base_folder.mkdir(exist_ok=True)
 
     for sorting_folder in sortings_folders:
-        _, dataset_name, session_name, filter_option = sorting_folder.name.split("_")
+        sorting_folder_split = sorting_folder.name.split("_")
+        dataset_name = sorting_folder_split[1]
+        session_name = "_".join(sorting_folder_split[2:-1])
+        filter_option = sorting_folder_split[-1]
         sorting_output_folder = sortings_output_base_folder / dataset_name / session_name / filter_option
         sorting_output_folder.mkdir(exist_ok=True, parents=True)
         shutil.copytree(sorting_folder, sorting_output_folder)
