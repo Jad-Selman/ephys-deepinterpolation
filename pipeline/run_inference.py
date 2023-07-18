@@ -1,7 +1,5 @@
 import warnings
 
-
-
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -70,6 +68,7 @@ desired_shape = (192, 2)
 # play around with these
 inference_n_jobs = 16
 inference_chunk_duration = "500ms"
+inference_predict_workers = 8
 inference_memory_gpu = 2000 #MB
 
 di_kwargs = dict(
@@ -206,6 +205,7 @@ if __name__ == "__main__":
                         post_frame=post_frame,
                         pre_post_omission=pre_post_omission,
                         memory_gpu=inference_memory_gpu,
+                        predict_workers=inference_predict_workers,
                         use_gpu=USE_GPU
                     )
                     recording_di = recording_di.save(
