@@ -27,7 +27,7 @@ import spikeinterface.qualitymetrics as sqm
 import tensorflow as tf
 
 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
 base_path = Path("../../..")
@@ -69,7 +69,7 @@ desired_shape = (192, 2)
 inference_n_jobs = 16
 inference_chunk_duration = "500ms"
 inference_predict_workers = 8
-inference_memory_gpu = 2000 #MB
+inference_memory_gpu = 2000  # MB
 
 di_kwargs = dict(
     pre_frame=pre_frame,
@@ -98,7 +98,9 @@ if __name__ == "__main__":
                 if probe not in session_dict:
                     session_dict[probe] = []
                 session = d["session"]
-                assert session in all_sessions[probe], f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
+                assert (
+                    session in all_sessions[probe]
+                ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
                 session_dict[probe].append(session)
     else:
         session_dict = all_sessions
@@ -187,11 +189,11 @@ if __name__ == "__main__":
 
                 # train model
                 model_folder = data_model_folder / session / filter_option
-                model_path = [p for p in model_folder.iterdir() if p.name.endswith("model.h5") and filter_option in p.name][0]
+                model_path = [
+                    p for p in model_folder.iterdir() if p.name.endswith("model.h5") and filter_option in p.name
+                ][0]
                 # full inference
-                output_folder = (
-                    results_folder / "deepinterpolated" / session / filter_option
-                )
+                output_folder = results_folder / "deepinterpolated" / session / filter_option
                 if OVERWRITE and output_folder.is_dir():
                     shutil.rmtree(output_folder)
 
@@ -206,7 +208,7 @@ if __name__ == "__main__":
                         pre_post_omission=pre_post_omission,
                         memory_gpu=inference_memory_gpu,
                         predict_workers=inference_predict_workers,
-                        use_gpu=USE_GPU
+                        use_gpu=USE_GPU,
                     )
                     recording_di = recording_di.save(
                         folder=output_folder,
@@ -214,9 +216,7 @@ if __name__ == "__main__":
                         chunk_duration=inference_chunk_duration,
                     )
                     t_stop_inference = time.perf_counter()
-                    elapsed_time_inference = np.round(
-                        t_stop_inference - t_start_inference, 2
-                    )
+                    elapsed_time_inference = np.round(t_stop_inference - t_start_inference, 2)
                     print(f"\t\tElapsed time INFERENCE: {elapsed_time_inference}s")
                 else:
                     print("\t\tLoading existing folder")
@@ -224,9 +224,7 @@ if __name__ == "__main__":
                 # apply inverse z-scoring
                 inverse_gains = 1 / recording_zscore.gain
                 inverse_offset = -recording_zscore.offset * inverse_gains
-                recording_di = spre.scale(
-                    recording_di, gain=inverse_gains, offset=inverse_offset, dtype="float"
-                )
+                recording_di = spre.scale(recording_di, gain=inverse_gains, offset=inverse_offset, dtype="float")
 
                 # save processed json
                 processed_folder = results_folder / "processed" / session / filter_option

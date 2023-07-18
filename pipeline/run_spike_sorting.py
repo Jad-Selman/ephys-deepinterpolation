@@ -29,6 +29,7 @@ base_path = Path("../../..")
 
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions
+
 n_jobs = 16
 
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
@@ -75,7 +76,9 @@ if __name__ == "__main__":
                 if probe not in session_dict:
                     session_dict[probe] = []
                 session = d["session"]
-                assert session in all_sessions[probe], f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
+                assert (
+                    session in all_sessions[probe]
+                ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
                 session_dict[probe].append(session)
     else:
         session_dict = all_sessions
@@ -135,26 +138,26 @@ if __name__ == "__main__":
                 "filter_option",
                 "unit_id",
                 "unit_id_di",
-                "agreement_score"
+                "agreement_score",
             ]
             unit_level_results = None
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
-                
+
                 # load recordings
                 # save processed json
                 processed_json_folder = processed_folder / session / filter_option
                 recording = si.load_extractor(processed_json_folder / "processed.json", base_folder=data_folder)
-                recording_di = si.load_extractor(processed_json_folder / "deepinterpolated.json", base_folder=base_folder)
+                recording_di = si.load_extractor(
+                    processed_json_folder / "deepinterpolated.json", base_folder=base_folder
+                )
 
                 # run spike sorting
-                sorting_output_folder = (
-                    results_folder / "sortings" / session / filter_option
-                )
+                sorting_output_folder = results_folder / "sortings" / session / filter_option
                 sorting_output_folder.mkdir(parents=True, exist_ok=True)
 
-                if (sorting_output_folder  / "sorting").is_dir() and not OVERWRITE:
+                if (sorting_output_folder / "sorting").is_dir() and not OVERWRITE:
                     print("\t\tLoading NO DI sorting")
                     sorting = si.load_extractor(sorting_output_folder / "sorting")
                 else:
@@ -167,11 +170,9 @@ if __name__ == "__main__":
                         verbose=True,
                         singularity_image=singularity_image,
                     )
-                    sorting = sorting.save(
-                        folder=sorting_output_folder / "sorting"
-                    )
+                    sorting = sorting.save(folder=sorting_output_folder / "sorting")
 
-                if (sorting_output_folder  / "sorting_di").is_dir() and not OVERWRITE:
+                if (sorting_output_folder / "sorting_di").is_dir() and not OVERWRITE:
                     print("\t\tLoading DI sorting")
                     sorting_di = si.load_extractor(sorting_output_folder / "sorting_di")
                 else:
@@ -184,9 +185,7 @@ if __name__ == "__main__":
                         verbose=True,
                         singularity_image=singularity_image,
                     )
-                    sorting_di = sorting_di.save(
-                        folder=sorting_output_folder / "sorting_di"
-                    )
+                    sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
 
                 # compare outputs
                 print("\t\tComparing sortings")
@@ -203,9 +202,7 @@ if __name__ == "__main__":
                 matched_units_valid = matched_unit_ids_di != -1
                 matched_unit_ids = matched_unit_ids[matched_units_valid]
                 matched_unit_ids_di = matched_unit_ids_di[matched_units_valid]
-                sorting_matched = sorting.select_units(
-                    unit_ids=matched_unit_ids
-                )
+                sorting_matched = sorting.select_units(unit_ids=matched_unit_ids)
                 sorting_di_matched = sorting_di.select_units(unit_ids=matched_unit_ids_di)
 
                 ## add entries to session-level results
@@ -217,16 +214,10 @@ if __name__ == "__main__":
                     "num_units": len(sorting.unit_ids),
                     "num_units_di": len(sorting_di.unit_ids),
                     "num_match": len(sorting_matched.unit_ids),
-                    "sorting_path": str(
-                        (sorting_output_folder / "sorting").relative_to(results_folder)
-                    ),
-                    "sorting_path_di": str(
-                        (sorting_output_folder / "sorting_di_").relative_to(results_folder)
-                    ),
+                    "sorting_path": str((sorting_output_folder / "sorting").relative_to(results_folder)),
+                    "sorting_path_di": str((sorting_output_folder / "sorting_di_").relative_to(results_folder)),
                 }
-                session_level_results = pd.concat(
-                    [session_level_results, pd.DataFrame([new_row])], ignore_index=True
-                )
+                session_level_results = pd.concat([session_level_results, pd.DataFrame([new_row])], ignore_index=True)
 
                 print(
                     f"\n\t\tNum units: {new_row['num_units']} - Num units DI: {new_row['num_units_di']} - Num match: {new_row['num_match']}"
@@ -293,16 +284,14 @@ if __name__ == "__main__":
                     "unit_id_di": we_di.unit_ids,
                 }
                 agreement_scores = []
-                for i in range(len(we.unit_ids)): 
+                for i in range(len(we.unit_ids)):
                     agreement_scores.append(comp.agreement_scores.at[we.unit_ids[i], we_di.unit_ids[i]])
                 new_rows["agreement_score"] = agreement_scores
                 for metric in qm.columns:
                     new_rows[metric] = qm[metric].values
                     new_rows[f"{metric}_di"] = qm_di[metric].values
                 # append new entries
-                unit_level_results = pd.concat(
-                    [unit_level_results, pd.DataFrame(new_rows)], ignore_index=True
-                )
+                unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
 
             session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
             unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)

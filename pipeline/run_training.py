@@ -92,7 +92,9 @@ if __name__ == "__main__":
                 if probe not in session_dict:
                     session_dict[probe] = []
                 session = d["session"]
-                assert session in all_sessions[probe], f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
+                assert (
+                    session in all_sessions[probe]
+                ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
                 session_dict[probe].append(session)
     else:
         session_dict = all_sessions
