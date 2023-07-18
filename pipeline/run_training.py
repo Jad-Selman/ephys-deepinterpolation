@@ -81,9 +81,8 @@ if __name__ == "__main__":
             DEBUG = False
 
     json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
-
+    print(f"Found {len(json_files)} JSON config")
     if len(json_files) > 0:
-        print(f"Found {len(json_files)} JSON config")
         session_dict = {}
         # each json file contains a session to run
         for json_file in json_files:
@@ -121,11 +120,8 @@ if __name__ == "__main__":
 
     for probe, sessions in session_dict.items():
         print(f"Dataset {probe}")
-        if DEBUG and len(sessions) > NUM_DEBUG_SESSIONS:
-            sessions_to_run = sessions[:NUM_DEBUG_SESSIONS]
-        else:
-            sessions_to_run = sessions
-        for session in sessions_to_run:
+
+        for session in sessions:
             print(f"\nAnalyzing session {session}\n")
             if str(DATASET_BUCKET).startswith("s3"):
                 raw_data_folder = scratch_folder / "raw"
@@ -143,11 +139,6 @@ if __name__ == "__main__":
                 raw_data_folder = DATASET_BUCKET
                 dst_folder = raw_data_folder / session
 
-            if "np1" in dst_folder.name:
-                probe = "NP1"
-            else:
-                probe = "NP2"
-
             recording_folder = dst_folder
             recording = si.load_extractor(recording_folder)
             if DEBUG:
@@ -155,6 +146,7 @@ if __name__ == "__main__":
                     start_frame=0,
                     end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                 )
+            print(recording)
 
             results_dict = {}
             for filter_option in FILTER_OPTIONS:
@@ -196,3 +188,7 @@ if __name__ == "__main__":
 
     for json_file in json_files:
         shutil.copy(json_file, results_folder)
+
+    print("Results folder content:")
+    for p in results_folder.iterdir():
+        print(p.name) 
