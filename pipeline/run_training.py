@@ -148,10 +148,8 @@ if __name__ == "__main__":
                 )
             print(recording)
 
-            results_dict = {}
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
-                results_dict[filter_option] = {}
                 # train DI models
                 print(f"\t\tTraning DI")
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
