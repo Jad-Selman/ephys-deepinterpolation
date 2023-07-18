@@ -6,20 +6,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 #### IMPORTS #######
 import shutil
-import numpy as np
+
+
 from pathlib import Path
-from numba import cuda
 import pandas as pd
-
-
-# SpikeInterface
-import spikeinterface as si
-import spikeinterface.extractors as se
-import spikeinterface.preprocessing as spre
-import spikeinterface.sorters as ss
-import spikeinterface.postprocessing as spost
-import spikeinterface.comparison as sc
-import spikeinterface.qualitymetrics as sqm
 
 
 base_path = Path("../../..")
