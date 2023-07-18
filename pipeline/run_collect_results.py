@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # copy sortings to results folder
     sortings_folders = [p for p in data_base_folder.iterdir() if "sortings_" in p.name and p.is_dir()]
     sortings_output_base_folder = results_folder / "sortings"
-    sortings_folders.mkdir(exist_ok=True)
+    sortings_output_base_folder.mkdir(exist_ok=True)
 
     for sorting_folder in sortings_folders:
         _, dataset_name, session_name, filter_option = sorting_folder.name.split("_")
