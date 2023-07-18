@@ -45,6 +45,8 @@ DATASET_BUCKET = data_folder / "ephys-compression-benchmark" / "aind-np2"
 DEBUG = False
 NUM_DEBUG_SESSIONS = 2
 DEBUG_DURATION = 20
+OVERWRITE = False
+
 
 
 # Define training and testing constants
@@ -60,6 +62,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == "true":
             DEBUG = True
+            OVERWRITE = True
         else:
             DEBUG = False
 
@@ -84,13 +87,6 @@ if __name__ == "__main__":
         session_dict = all_sessions
 
     print(session_dict)
-
-    if DEBUG:
-        if len(sessions) > NUM_DEBUG_SESSIONS:
-            sessions = sessions[:NUM_DEBUG_SESSIONS]
-        OVERWRITE = True
-    else:
-        OVERWRITE = False
 
     si.set_global_job_kwargs(**job_kwargs)
 
@@ -154,7 +150,7 @@ if __name__ == "__main__":
                 )
 
                 # run spike sorting
-                sorting_output_folder = results_folder / "sortings" / session / filter_option
+                sorting_output_folder = results_folder / f"sortings_{dataset_name}_{session_name}_{filter_option}"
                 sorting_output_folder.mkdir(parents=True, exist_ok=True)
 
                 if (sorting_output_folder / "sorting").is_dir() and not OVERWRITE:
@@ -224,7 +220,7 @@ if __name__ == "__main__":
                 )
 
                 # waveforms
-                waveforms_folder = results_folder / "waveforms" / session / filter_option
+                waveforms_folder = results_folder / f"waveforms_{dataset_name}_{session_name}_{filter_option}"
                 waveforms_folder.mkdir(exist_ok=True, parents=True)
 
                 if (waveforms_folder / "waveforms").is_dir() and not OVERWRITE:

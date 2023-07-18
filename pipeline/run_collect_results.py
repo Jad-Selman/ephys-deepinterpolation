@@ -5,14 +5,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 #### IMPORTS #######
-import os
-import sys
-import json
+import shutil
 import numpy as np
 from pathlib import Path
 from numba import cuda
 import pandas as pd
-import time
 
 
 # SpikeInterface
@@ -39,10 +36,12 @@ if __name__ == "__main__":
     df_session = None
     df_units = None
 
-    if (data_folder / "sortings").is_dir():
+    probe_sortings_folders = [p for p in data_folder.iterdir() if "sortings_" in p.name and p.is_dir()]
+
+    if len(probe_sortings_folders) > 0:
         data_base_folder = data_folder
     else:
-        data_subfolders = [p for p in data_folder.iterdir() if (p / "sortings").is_dir()]
+        data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
         data_base_folder = data_subfolders[0]
 
     session_csvs = [p for p in data_base_folder.iterdir() if "session" in p.name and p.suffix == ".csv"]
@@ -60,8 +59,17 @@ if __name__ == "__main__":
         else:
             df_units = pd.concat([df_units, pd.read_csv(unit_csv)])
 
-    # copy sortings to results folder
-
     # save concatenated dataframes
     df_session.to_csv(results_folder / "sessions.csv", index=False)
     df_units.to_csv(results_folder / "units.csv", index=False)
+
+    # copy sortings to results folder
+    sortings_folders = [p for p in data_base_folder.iterdir() if "sortings_" in p.name and p.is_dir()]
+    sortings_output_base_folder = results_folder / "sortings"
+    sortings_folders.mkdir(exist_ok=True)
+
+    for sorting_folder in sortings_folders:
+        _, dataset_name, session_name, filter_option = sorting_folder.name.split("_")
+        sorting_output_folder = sortings_output_base_folder / dataset_name / session_name / filter_option
+        sorting_output_folder.mkdir(exist_ok=True, parents=True)
+        shutil.copytree(sorting_folder, sorting_output_folder)
