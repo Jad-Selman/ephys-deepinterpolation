@@ -141,26 +141,20 @@ if __name__ == "__main__":
     ]
     unit_level_results = None
 
-    if (data_folder / "models").is_dir():
-        data_model_folder = data_folder
-    else:
-        data_subfolders = [p for p in data_folder.iterdir()]
-        assert len(data_subfolders) == 1
-        data_model_folder = data_subfolders[0]
+    sessions = sessions[:2]
 
     for session in sessions:
         print(f"\nAnalyzing session {session}\n")
         if str(DATASET_BUCKET).startswith("s3"):
             raw_data_folder = scratch_folder / "raw"
             raw_data_folder.mkdir(exist_ok=True)
-            dst_folder = raw_data_folder / session
 
             # download dataset
             dst_folder.mkdir(exist_ok=True)
 
             src_folder = f"{DATASET_BUCKET}{session}"
 
-            cmd = f"aws s3 sync --no-sign-request {src_folder} {dst_folder}"
+            cmd = f"aws s3 sync {src_folder} {dst_folder}"
             # aws command to download
             os.system(cmd)
         else:
@@ -200,8 +194,23 @@ if __name__ == "__main__":
             recording_zscore = spre.zscore(recording_processed)
 
             # train model
-            model_folder = data_model_folder / "models" / session / filter_option
-            model_path = [p for p in model_folder if p.name.endswith("model.h5") and filter_option in p.name][0]
+            model_folder = results_folder / "models" / session / filter_option
+            model_folder.parent.mkdir(parents=True, exist_ok=True)
+            # Use SI function
+            t_start_training = time.perf_counter()
+            model_path = spre.train_deepinterpolation(
+                recording_zscore,
+                model_folder=model_folder,
+                model_name=model_name,
+                train_start_s=TRAINING_START_S,
+                train_end_s=TRAINING_END_S,
+                test_start_s=TESTING_START_S,
+                test_end_s=TESTING_END_S,
+                **di_kwargs,
+            )
+            t_stop_training = time.perf_counter()
+            elapsed_time_training = np.round(t_stop_training - t_start_training, 2)
+            print(f"\t\tElapsed time TRAINING: {elapsed_time_training}s")
             # full inference
             output_folder = (
                 results_folder / "deepinterpolated" / session / filter_option
