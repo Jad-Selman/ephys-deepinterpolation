@@ -135,12 +135,8 @@ if __name__ == "__main__":
         data_model_folder = data_subfolders[0] / "models"
 
     for probe, sessions in session_dict.items():
-        if DEBUG and len(sessions) > NUM_DEBUG_SESSIONS:
-            sessions_to_run = sessions[:NUM_DEBUG_SESSIONS]
-        else:
-            sessions_to_run = sessions
         print(f"Dataset {probe}")
-        for session in sessions_to_run:
+        for session in sessions:
             print(f"\nAnalyzing session {session}\n")
             dataset_name, session_name = session.split("/")
 
