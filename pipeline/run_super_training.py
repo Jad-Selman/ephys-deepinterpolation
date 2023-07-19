@@ -46,7 +46,7 @@ results_folder = base_path / "results"
 DATASET_BUCKET = data_folder / "ephys-compression-benchmark"
 
 DEBUG = False
-NUM_DEBUG_SESSIONS = 2
+NUM_DEBUG_SESSIONS = 4
 DEBUG_DURATION = 20
 
 ##### DEFINE PARAMS #####
@@ -104,17 +104,17 @@ if __name__ == "__main__":
 
     model_path = None
     for filter_option in FILTER_OPTIONS:
-        print(f"\tFilter option: {filter_option}")
+        print(f"Filter option: {filter_option}")
         
         for probe, sessions in session_dict.items():
-            print(f"Dataset {probe}")
+            print(f"\tDataset {probe}")
             if DEBUG:
                 sessions_to_use = sessions[:NUM_DEBUG_SESSIONS]
             else:
                 sessions_to_use = sessions
-            print(f"Running super training with {sessions_to_use} sessions")
+            print(f"\tRunning super training with {sessions_to_use} sessions")
             for session in sessions_to_use:
-                print(f"\nAnalyzing session {session}\n")
+                print(f"\t\tSession {session}\n")
                 if str(DATASET_BUCKET).startswith("s3"):
                     raw_data_folder = scratch_folder / "raw"
                     raw_data_folder.mkdir(exist_ok=True)
@@ -141,7 +141,6 @@ if __name__ == "__main__":
                 print(recording)
 
                 # train DI models
-                print(f"\t\tTraning DI")
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
                 testing_time = np.round(TESTING_END_S - TESTING_START_S, 3)
                 model_name = f"{filter_option}_t{training_time}s_v{testing_time}s"
@@ -162,7 +161,7 @@ if __name__ == "__main__":
                 if model_path is None:
                     print(f"\t\t\tFirst training, no model to load")
                 else:
-                    print(f"\t\t\Refining training with new session")
+                    print(f"\t\t\tRefining training with new session")
                 # Use SI function
                 t_start_training = time.perf_counter()
                 model_path = spre.train_deepinterpolation(
