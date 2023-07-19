@@ -14,6 +14,7 @@ from pathlib import Path
 import pandas as pd
 import time
 
+import matplotlib.pyplot as plt
 
 # SpikeInterface
 import spikeinterface as si
@@ -92,7 +93,7 @@ if __name__ == "__main__":
         OVERWRITE = True
     else:
         TRAINING_START_S = 0
-        TRAINING_END_S = 20
+        TRAINING_END_S = 10
         TESTING_START_S = 70
         TESTING_END_S = 70.1
         OVERWRITE = False
@@ -101,11 +102,10 @@ if __name__ == "__main__":
 
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
 
-
-    model_path = None
+    pretrained_model_path = None
     for filter_option in FILTER_OPTIONS:
         print(f"Filter option: {filter_option}")
-        
+
         for probe, sessions in session_dict.items():
             print(f"\tDataset {probe}")
             if DEBUG:
@@ -113,8 +113,8 @@ if __name__ == "__main__":
             else:
                 sessions_to_use = sessions
             print(f"\tRunning super training with {sessions_to_use} sessions")
-            for session in sessions_to_use:
-                print(f"\t\tSession {session}\n")
+            for i, session in enumerate(sessions_to_use):
+                print(f"\t\tSession {session} - Iteration {i}\n")
                 if str(DATASET_BUCKET).startswith("s3"):
                     raw_data_folder = scratch_folder / "raw"
                     raw_data_folder.mkdir(exist_ok=True)
@@ -155,26 +155,54 @@ if __name__ == "__main__":
                 recording_zscore = spre.zscore(recording_processed)
 
                 # train model
-                model_folder = results_folder / f"model_{filter_option}"
+                model_folder = results_folder / f"model_{filter_option}-iter{i}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
 
-                if model_path is None:
-                    print(f"\t\t\tFirst training, no model to load")
-                else:
-                    print(f"\t\t\tRefining training with new session")
                 # Use SI function
                 t_start_training = time.perf_counter()
                 model_path = spre.train_deepinterpolation(
                     recording_zscore,
                     model_folder=model_folder,
                     model_name=model_name,
-                    existing_model_path=model_path,
+                    existing_model_path=pretrained_model_path,
                     train_start_s=TRAINING_START_S,
                     train_end_s=TRAINING_END_S,
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
                     **di_kwargs,
                 )
+                pretrained_model_path = model_path
                 t_stop_training = time.perf_counter()
                 elapsed_time_training = np.round(t_stop_training - t_start_training, 2)
                 print(f"\t\tElapsed time TRAINING {session}-{filter_option}: {elapsed_time_training}s")
+
+        # aggregate results
+        print(f"Aggregating results for {filter_option}")
+        final_model_folder = results_folder / f"model_{filter_option}"
+        shutil.copytree(model_folder, final_model_folder)
+        final_model_name = [p.name for p in final_model_folder.iterdir() if "_model" in p.name][0]
+        final_model_stem = final_model_name.split("_model")[0]
+
+        # concatenate loss and val loss
+        loss_accuracies = np.array([])
+        val_accuracies = np.array([])
+
+        for i in range(len(sessions_to_use)):
+            model_folder = results_folder / f"model_{filter_option}-iter{i}"
+            loss_file = [p for p in model_folder.iterdir() if "_loss.npy" in p.name and "val" not in p.name][0]
+            val_loss_file = [p for p in model_folder.iterdir() if "val_loss.npy" in p.name][0]
+            loss = np.load(loss_file)
+            val_loss = np.load(val_loss_file)
+            loss_accuracies = np.concatenate((loss_accuracies, loss))
+            val_accuracies = np.concatenate((val_accuracies, val_loss))
+        np.save(final_model_folder / f"{final_model_stem}_loss.npy", loss_accuracies)
+        np.save(final_model_folder / f"{final_model_stem}_val_loss.npy", val_accuracies)
+
+        # plot losses
+        fig, ax = plt.subplots()
+        ax.plot(loss_accuracies, color="C0", label="loss")
+        ax.plot(val_accuracies, color="C0", label="loss")
+        ax.set_xlabel("number of epochs")
+        ax.set_ylabel("training loss")
+        ax.legend()
+        fig.savefig(final_model_folder / f"{final_model_stem}_losses.png", dpi=300)

@@ -48,7 +48,6 @@ DEBUG_DURATION = 20
 OVERWRITE = False
 
 
-
 # Define training and testing constants
 FILTER_OPTIONS = ["bp", "hp"]  # "hp", "bp", "no"
 

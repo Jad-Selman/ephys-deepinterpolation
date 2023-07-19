@@ -192,4 +192,4 @@ if __name__ == "__main__":
 
     print("Results folder content:")
     for p in results_folder.iterdir():
-        print(p.name) 
+        print(p.name)
