@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 sessions_to_use = sessions[:NUM_DEBUG_SESSIONS]
             else:
                 sessions_to_use = sessions
-            print(f"\tRunning super training with {sessions_to_use} sessions")
+            print(f"\tRunning super training with {len(sessions_to_use)} sessions")
             for i, session in enumerate(sessions_to_use):
                 print(f"\t\tSession {session} - Iteration {i}\n")
                 if str(DATASET_BUCKET).startswith("s3"):
@@ -138,7 +138,6 @@ if __name__ == "__main__":
                         start_frame=0,
                         end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                     )
-                print(recording)
 
                 # train DI models
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
@@ -155,7 +154,7 @@ if __name__ == "__main__":
                 recording_zscore = spre.zscore(recording_processed)
 
                 # train model
-                model_folder = results_folder / f"model_{filter_option}-iter{i}"
+                model_folder = results_folder / f"models_{filter_option}" / f"iter{i}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
 
                 # Use SI function
@@ -188,7 +187,7 @@ if __name__ == "__main__":
         val_accuracies = np.array([])
 
         for i in range(len(sessions_to_use)):
-            model_folder = results_folder / f"model_{filter_option}-iter{i}"
+            model_folder = results_folder / f"models_{filter_option}" / f"iter{i}"
             loss_file = [p for p in model_folder.iterdir() if "_loss.npy" in p.name and "val" not in p.name][0]
             val_loss_file = [p for p in model_folder.iterdir() if "val_loss.npy" in p.name][0]
             loss = np.load(loss_file)
@@ -201,7 +200,7 @@ if __name__ == "__main__":
         # plot losses
         fig, ax = plt.subplots()
         ax.plot(loss_accuracies, color="C0", label="loss")
-        ax.plot(val_accuracies, color="C0", label="loss")
+        ax.plot(val_accuracies, color="C1", label="loss")
         ax.set_xlabel("number of epochs")
         ax.set_ylabel("training loss")
         ax.legend()
