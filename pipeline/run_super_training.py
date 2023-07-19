@@ -80,24 +80,7 @@ if __name__ == "__main__":
         else:
             DEBUG = False
 
-    json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
-    print(f"Found {len(json_files)} JSON config")
-    if len(json_files) > 0:
-        session_dict = {}
-        # each json file contains a session to run
-        for json_file in json_files:
-            with open(json_file, "r") as f:
-                d = json.load(f)
-                probe = d["probe"]
-                if probe not in session_dict:
-                    session_dict[probe] = []
-                session = d["session"]
-                assert (
-                    session in all_sessions[probe]
-                ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
-                session_dict[probe].append(session)
-    else:
-        session_dict = all_sessions
+    session_dict = all_sessions
 
     print(session_dict)
 
@@ -118,40 +101,45 @@ if __name__ == "__main__":
 
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
 
-    for probe, sessions in session_dict.items():
-        print(f"Dataset {probe}")
 
-        for session in sessions:
-            print(f"\nAnalyzing session {session}\n")
-            dataset_name, session_name = session.split("/")
-
-            if str(DATASET_BUCKET).startswith("s3"):
-                raw_data_folder = scratch_folder / "raw"
-                raw_data_folder.mkdir(exist_ok=True)
-
-                # download dataset
-                dst_folder.mkdir(exist_ok=True)
-
-                src_folder = f"{DATASET_BUCKET}{session}"
-
-                cmd = f"aws s3 sync {src_folder} {dst_folder}"
-                # aws command to download
-                os.system(cmd)
-            else:
-                raw_data_folder = DATASET_BUCKET
-                dst_folder = raw_data_folder / session
-
-            recording_folder = dst_folder
-            recording = si.load_extractor(recording_folder)
+    model_path = None
+    for filter_option in FILTER_OPTIONS:
+        print(f"\tFilter option: {filter_option}")
+        
+        for probe, sessions in session_dict.items():
+            print(f"Dataset {probe}")
             if DEBUG:
-                recording = recording.frame_slice(
-                    start_frame=0,
-                    end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
-                )
-            print(recording)
+                sessions_to_use = sessions[:NUM_DEBUG_SESSIONS]
+            else:
+                sessions_to_use = sessions
+            print(f"Running super training with {sessions_to_use} sessions")
+            for session in sessions_to_use:
+                print(f"\nAnalyzing session {session}\n")
+                if str(DATASET_BUCKET).startswith("s3"):
+                    raw_data_folder = scratch_folder / "raw"
+                    raw_data_folder.mkdir(exist_ok=True)
 
-            for filter_option in FILTER_OPTIONS:
-                print(f"\tFilter option: {filter_option}")
+                    # download dataset
+                    dst_folder.mkdir(exist_ok=True)
+
+                    src_folder = f"{DATASET_BUCKET}{session}"
+
+                    cmd = f"aws s3 sync {src_folder} {dst_folder}"
+                    # aws command to download
+                    os.system(cmd)
+                else:
+                    raw_data_folder = DATASET_BUCKET
+                    dst_folder = raw_data_folder / session
+
+                recording_folder = dst_folder
+                recording = si.load_extractor(recording_folder)
+                if DEBUG:
+                    recording = recording.frame_slice(
+                        start_frame=0,
+                        end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                    )
+                print(recording)
+
                 # train DI models
                 print(f"\t\tTraning DI")
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
@@ -168,14 +156,20 @@ if __name__ == "__main__":
                 recording_zscore = spre.zscore(recording_processed)
 
                 # train model
-                model_folder = results_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
+                model_folder = results_folder / f"model_{filter_option}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
+
+                if model_path is None:
+                    print(f"\t\t\tFirst training, no model to load")
+                else:
+                    print(f"\t\t\Refining training with new session")
                 # Use SI function
                 t_start_training = time.perf_counter()
                 model_path = spre.train_deepinterpolation(
                     recording_zscore,
                     model_folder=model_folder,
                     model_name=model_name,
+                    existing_model_path=model_path,
                     train_start_s=TRAINING_START_S,
                     train_end_s=TRAINING_END_S,
                     test_start_s=TESTING_START_S,
@@ -185,11 +179,3 @@ if __name__ == "__main__":
                 t_stop_training = time.perf_counter()
                 elapsed_time_training = np.round(t_stop_training - t_start_training, 2)
                 print(f"\t\tElapsed time TRAINING {session}-{filter_option}: {elapsed_time_training}s")
-
-    for json_file in json_files:
-        print(f"Copying JSON file: {json_file.name} to {results_folder}")
-        shutil.copy(json_file, results_folder)
-
-    print("Results folder content:")
-    for p in results_folder.iterdir():
-        print(p.name) 

@@ -91,16 +91,13 @@ if __name__ == "__main__":
     si.set_global_job_kwargs(**job_kwargs)
 
     #### START ####
-    if (data_folder / "processed").is_dir():
-        processed_folder = data_folder / "processed"
-        deepinterpolated_folder = data_folder / "deepinterpolated"
-        base_folder = data_folder
+    probe_processed_folders = [p for p in data_folder.iterdir() if "processed_" in p.name and p.is_dir()]
+
+    if len(probe_processed_folders) > 0:
+        processed_folder = data_folder
     else:
-        data_subfolders = [p for p in data_folder.iterdir() if (p / "processed").is_dir()]
-        assert len(data_subfolders) == 1
-        processed_folder = data_subfolders[0] / "processed"
-        deepinterpolated_folder = data_subfolders[0] / "deepinterpolated"
-        base_folder = data_subfolders[0]
+        data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
+        processed_folder = data_subfolders[0]
 
     for probe, sessions in session_dict.items():
 
@@ -139,10 +136,10 @@ if __name__ == "__main__":
 
                 # load recordings
                 # save processed json
-                processed_json_folder = processed_folder / session / filter_option
+                processed_json_folder = processed_folder / f"processed_{dataset_name}_{session_name}_{filter_option}"
                 recording = si.load_extractor(processed_json_folder / "processed.json", base_folder=data_folder)
                 recording_di = si.load_extractor(
-                    processed_json_folder / "deepinterpolated.json", base_folder=base_folder
+                    processed_json_folder / "deepinterpolated.json", base_folder=data_folder
                 )
 
                 # run spike sorting

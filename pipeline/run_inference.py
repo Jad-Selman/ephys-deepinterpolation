@@ -126,13 +126,13 @@ if __name__ == "__main__":
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
 
     #### START ####
+    probe_models_folders = [p for p in data_folder.iterdir() if "models_" in p.name and p.is_dir()]
 
-    if (data_folder / "models").is_dir():
-        data_model_folder = data_folder / "models"
+    if len(probe_models_folders) > 0:
+        data_model_folder = data_folder
     else:
-        data_subfolders = [p for p in data_folder.iterdir() if (p / "models").is_dir()]
-        assert len(data_subfolders) == 1
-        data_model_folder = data_subfolders[0] / "models"
+        data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
+        data_model_folder = data_subfolders[0]
 
     for probe, sessions in session_dict.items():
         print(f"Dataset {probe}")
@@ -183,12 +183,10 @@ if __name__ == "__main__":
                 recording_zscore = spre.zscore(recording_processed)
 
                 # train model
-                model_folder = data_model_folder / session / filter_option
-                model_path = [
-                    p for p in model_folder.iterdir() if p.name.endswith("model.h5") and filter_option in p.name
-                ][0]
+                model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
+                model_path = [p for p in model_folder.iterdir() if p.name.endswith("model.h5")][0]
                 # full inference
-                output_folder = results_folder / "deepinterpolated" / session / filter_option
+                output_folder = results_folder / f"deepinterpolatedf_{dataset_name}_{session_name}_{filter_option}"
                 if OVERWRITE and output_folder.is_dir():
                     shutil.rmtree(output_folder)
 
@@ -222,7 +220,7 @@ if __name__ == "__main__":
                 recording_di = spre.scale(recording_di, gain=inverse_gains, offset=inverse_offset, dtype="float")
 
                 # save processed json
-                processed_folder = results_folder / "processed" / session / filter_option
+                processed_folder = results_folder / f"processed_{dataset_name}_{session_name}_{filter_option}"
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 recording_processed.dump_to_json(processed_folder / "processed.json", relative_to=results_folder)
                 recording_di.dump_to_json(processed_folder / f"deepinterpolated.json", relative_to=results_folder)
