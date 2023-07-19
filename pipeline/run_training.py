@@ -182,7 +182,7 @@ if __name__ == "__main__":
                 )
                 t_stop_training = time.perf_counter()
                 elapsed_time_training = np.round(t_stop_training - t_start_training, 2)
-                print(f"\t\tElapsed time TRAINING: {elapsed_time_training}s")
+                print(f"\t\tElapsed time TRAINING {session}-{filter_option}: {elapsed_time_training}s")
 
     for json_file in json_files:
         print(f"Copying JSON file: {json_file.name} to {results_folder}")
