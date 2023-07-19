@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 
-base_path = Path("../../..")
+base_path = Path("../../..").resolve()
 
 
 data_folder = base_path / "data"

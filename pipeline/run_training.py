@@ -28,7 +28,7 @@ import spikeinterface.qualitymetrics as sqm
 import tensorflow as tf
 
 
-base_path = Path("../../..")
+base_path = Path("../../..").resolve()
 
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions
@@ -185,6 +185,7 @@ if __name__ == "__main__":
                 print(f"\t\tElapsed time TRAINING: {elapsed_time_training}s")
 
     for json_file in json_files:
+        print(f"Copying JSON file: {json_file.name} to {results_folder}")
         shutil.copy(json_file, results_folder)
 
     print("Results folder content:")
