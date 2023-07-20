@@ -113,7 +113,9 @@ if __name__ == "__main__":
 
     si.set_global_job_kwargs(**job_kwargs)
 
-    print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
+    available_gpus = tf.config.list_physical_devices("GPU")
+    print(f"Tensorflow GPU status: {available_gpus}")
+    nb_gpus = len(available_gpus)
 
     for probe, sessions in session_dict.items():
         print(f"Dataset {probe}")
@@ -177,6 +179,7 @@ if __name__ == "__main__":
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
                     verbose=False,
+                    nb_gpus=nb_gpus,
                     **di_kwargs,
                 )
                 t_stop_training = time.perf_counter()
