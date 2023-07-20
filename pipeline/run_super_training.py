@@ -196,7 +196,7 @@ if __name__ == "__main__":
         # plot losses
         fig, ax = plt.subplots()
         ax.plot(loss_accuracies, color="C0", label="loss")
-        ax.plot(val_accuracies, color="C1", label="loss")
+        ax.plot(val_accuracies, color="C1", label="val_loss")
         ax.set_xlabel("number of epochs")
         ax.set_ylabel("training loss")
         ax.legend()

@@ -138,7 +138,7 @@ if __name__ == "__main__":
                 processed_json_folder = processed_folder / f"processed_{dataset_name}_{session_name}_{filter_option}"
                 recording = si.load_extractor(processed_json_folder / "processed.json", base_folder=data_folder)
                 recording_di = si.load_extractor(
-                    processed_json_folder / "deepinterpolated.json", base_folder=data_folder
+                    processed_json_folder / "deepinterpolated.json", base_folder=processed_folder
                 )
 
                 # run spike sorting

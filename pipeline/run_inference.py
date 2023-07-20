@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
                 model_path = [p for p in model_folder.iterdir() if p.name.endswith("model.h5")][0]
                 # full inference
-                output_folder = results_folder / f"deepinterpolatedf_{dataset_name}_{session_name}_{filter_option}"
+                output_folder = results_folder / f"deepinterpolated_{dataset_name}_{session_name}_{filter_option}"
                 if OVERWRITE and output_folder.is_dir():
                     shutil.rmtree(output_folder)
 
