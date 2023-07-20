@@ -12,8 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 
-base_path = Path("../../..").resolve()
-
+base_path = Path("..").resolve()
 
 data_folder = base_path / "data"
 scratch_folder = base_path / "scratch"
