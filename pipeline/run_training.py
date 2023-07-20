@@ -176,6 +176,7 @@ if __name__ == "__main__":
                     train_end_s=TRAINING_END_S,
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
+                    verbose=False,
                     **di_kwargs,
                 )
                 t_stop_training = time.perf_counter()
