@@ -29,7 +29,7 @@ if __name__ == "__main__":
     df_session = None
     df_units = None
 
-    probe_sortings_folders = [p for p in data_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
+    probe_sortings_folders = [p for p in data_folder.iterdir() if p.name.startswith("sorting_") and p.is_dir()]
 
     if len(probe_sortings_folders) > 0:
         data_models_folder = data_folder
