@@ -116,8 +116,8 @@ if __name__ == "__main__":
     available_gpus = tf.config.list_physical_devices("GPU")
     print(f"Tensorflow GPU status: {available_gpus}")
     nb_gpus = len(available_gpus)
-    if len(nb_gpus) > 1:
-        print("Use 1 GPU only")
+    if nb_gpus > 1:
+        print("Use 1 GPU only!")
         nb_gpus = 1
 
     for probe, sessions in session_dict.items():
