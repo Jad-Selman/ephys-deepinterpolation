@@ -20,12 +20,16 @@ results_folder = base_path / "results"
 
 
 if __name__ == "__main__":
+    # list all data entries
+    print("Data folder content:")
+    for p in data_folder.iterdir():
+        print(f"\t{p.name}")
 
     # concatenate dataframes
     df_session = None
     df_units = None
 
-    probe_sortings_folders = [p for p in data_folder.iterdir() if "sortings_" in p.name and p.is_dir()]
+    probe_sortings_folders = [p for p in data_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
 
     if len(probe_sortings_folders) > 0:
         data_base_folder = data_folder
@@ -33,8 +37,8 @@ if __name__ == "__main__":
         data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
         data_base_folder = data_subfolders[0]
 
-    session_csvs = [p for p in data_base_folder.iterdir() if "session" in p.name and p.suffix == ".csv"]
-    unit_csvs = [p for p in data_base_folder.iterdir() if "unit" in p.name and p.suffix == ".csv"]
+    session_csvs = [p for p in data_base_folder.iterdir() if p.name.endswith("sessions.csv")]
+    unit_csvs = [p for p in data_base_folder.iterdir() if p.name.endswith("units.csv")]
 
     for session_csv in session_csvs:
         if df_session is None:
