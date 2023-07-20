@@ -52,7 +52,7 @@ DEBUG_DURATION = 20
 ##### DEFINE PARAMS #####
 OVERWRITE = False
 USE_GPU = True
-FULL_INFERENCE = True
+STEPS_PER_EPOCH = 100
 
 # Define training and testing constants (@Jad you can gradually increase this)
 
@@ -183,6 +183,7 @@ if __name__ == "__main__":
                     test_end_s=TESTING_END_S,
                     verbose=False,
                     nb_gpus=nb_gpus,
+                    steps_per_epoch=STEPS_PER_EPOCH,
                     **di_kwargs,
                 )
                 t_stop_training = time.perf_counter()
