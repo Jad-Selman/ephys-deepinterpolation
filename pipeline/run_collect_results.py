@@ -32,13 +32,23 @@ if __name__ == "__main__":
     probe_sortings_folders = [p for p in data_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
 
     if len(probe_sortings_folders) > 0:
-        data_base_folder = data_folder
+        data_models_folder = data_folder
+        data_sortings_folder = data_folder
     else:
-        data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
-        data_base_folder = data_subfolders[0]
+        data_model_subfolders = []
+        for p in data_folder.iterdir():
+            if p.is_dir() and len([pp for pp in p.iterdir() if "model_" in pp.name and pp.is_dir()]) > 0:
+                data_model_subfolders.append(p)
+        data_models_folder = data_model_subfolders[0]
 
-    session_csvs = [p for p in data_base_folder.iterdir() if p.name.endswith("sessions.csv")]
-    unit_csvs = [p for p in data_base_folder.iterdir() if p.name.endswith("units.csv")]
+        data_sorting_subfolders = []
+        for p in data_folder.iterdir():
+            if p.is_dir() and len([pp for pp in p.iterdir() if "sorting_" in pp.name and pp.is_dir()]) > 0:
+                data_sorting_subfolders.append(p)
+        data_sortings_folder = data_sorting_subfolders[0]
+
+    session_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("sessions.csv")]
+    unit_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("units.csv")]
 
     for session_csv in session_csvs:
         if df_session is None:
@@ -57,7 +67,7 @@ if __name__ == "__main__":
     df_units.to_csv(results_folder / "units.csv", index=False)
 
     # copy sortings to results folder
-    sortings_folders = [p for p in data_base_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
+    sortings_folders = [p for p in data_sortings_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
     sortings_output_base_folder = results_folder / "sortings"
     sortings_output_base_folder.mkdir(exist_ok=True)
 
@@ -72,7 +82,7 @@ if __name__ == "__main__":
             shutil.copytree(sorting_subfolder, sorting_output_folder / sorting_subfolder.name)
 
     # copy models to results folder
-    models_folders = [p for p in data_base_folder.iterdir() if "model_" in p.name and p.is_dir()]
+    models_folders = [p for p in data_models_folder.iterdir() if "model_" in p.name and p.is_dir()]
     models_output_base_folder = results_folder / "models"
     models_output_base_folder.mkdir(exist_ok=True)
 
