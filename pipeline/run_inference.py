@@ -126,7 +126,7 @@ if __name__ == "__main__":
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
 
     #### START ####
-    probe_models_folders = [p for p in data_folder.iterdir() if "models_" in p.name and p.is_dir()]
+    probe_models_folders = [p for p in data_folder.iterdir() if "model_" in p.name and p.is_dir()]
 
     if len(probe_models_folders) > 0:
         data_model_folder = data_folder
