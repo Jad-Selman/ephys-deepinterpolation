@@ -131,8 +131,11 @@ if __name__ == "__main__":
     if len(probe_models_folders) > 0:
         data_model_folder = data_folder
     else:
-        data_subfolders = [p for p in data_folder.iterdir() if p.is_dir()]
-        data_model_folder = data_subfolders[0]
+        data_model_subfolders = []
+        for p in data_folder.iterdir():
+            if p.is_dir() and len([pp for pp in p.iterdir() if "model_" in pp.name and pp.is_dir()]) > 0:
+                data_model_subfolders.append(p)
+        data_model_folder = data_model_subfolders[0]
 
     for probe, sessions in session_dict.items():
         print(f"Dataset {probe}")
