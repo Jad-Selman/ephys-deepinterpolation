@@ -73,10 +73,7 @@ inference_predict_workers = 8
 inference_memory_gpu = 2000  # MB
 
 di_kwargs = dict(
-    pre_frame=pre_frame,
-    post_frame=post_frame,
-    pre_post_omission=pre_post_omission,
-    desired_shape=desired_shape,
+    pre_frame=pre_frame, post_frame=post_frame, pre_post_omission=pre_post_omission, desired_shape=desired_shape,
 )
 
 if __name__ == "__main__":
@@ -164,8 +161,7 @@ if __name__ == "__main__":
             recording = si.load_extractor(recording_folder)
             if DEBUG:
                 recording = recording.frame_slice(
-                    start_frame=0,
-                    end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                    start_frame=0, end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                 )
 
             for filter_option in FILTER_OPTIONS:
@@ -207,9 +203,7 @@ if __name__ == "__main__":
                         use_gpu=USE_GPU,
                     )
                     recording_di = recording_di.save(
-                        folder=output_folder,
-                        n_jobs=inference_n_jobs,
-                        chunk_duration=inference_chunk_duration,
+                        folder=output_folder, n_jobs=inference_n_jobs, chunk_duration=inference_chunk_duration,
                     )
                     t_stop_inference = time.perf_counter()
                     elapsed_time_inference = np.round(t_stop_inference - t_start_inference, 2)

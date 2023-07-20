@@ -53,7 +53,7 @@ if __name__ == "__main__":
     df_units.to_csv(results_folder / "units.csv", index=False)
 
     # copy sortings to results folder
-    sortings_folders = [p for p in data_base_folder.iterdir() if "sortings_" in p.name and p.is_dir()]
+    sortings_folders = [p for p in data_base_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
     sortings_output_base_folder = results_folder / "sortings"
     sortings_output_base_folder.mkdir(exist_ok=True)
 
@@ -66,3 +66,17 @@ if __name__ == "__main__":
         sorting_output_folder.mkdir(exist_ok=True, parents=True)
         for sorting_subfolder in sorting_folder.iterdir():
             shutil.copytree(sorting_subfolder, sorting_output_folder / sorting_subfolder.name)
+
+    # copy models to results folder
+    models_folders = [p for p in data_base_folder.iterdir() if "model_" in p.name and p.is_dir()]
+    models_output_base_folder = results_folder / "models"
+    models_output_base_folder.mkdir(exist_ok=True)
+
+    for model_folder in models_folders:
+        model_folder_split = model_folder.name.split("_")
+        dataset_name = model_folder_split[1]
+        session_name = "_".join(model_folder_split[2:-1])
+        filter_option = model_folder_split[-1]
+        model_output_folder = models_output_base_folder / dataset_name / session_name / filter_option
+        model_output_folder.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copytree(model_folder, model_output_folder)

@@ -67,10 +67,7 @@ pre_post_omission = 1
 desired_shape = (192, 2)
 
 di_kwargs = dict(
-    pre_frame=pre_frame,
-    post_frame=post_frame,
-    pre_post_omission=pre_post_omission,
-    desired_shape=desired_shape,
+    pre_frame=pre_frame, post_frame=post_frame, pre_post_omission=pre_post_omission, desired_shape=desired_shape,
 )
 
 
@@ -135,8 +132,7 @@ if __name__ == "__main__":
                 recording = si.load_extractor(recording_folder)
                 if DEBUG:
                     recording = recording.frame_slice(
-                        start_frame=0,
-                        end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                        start_frame=0, end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                     )
 
                 # train DI models

@@ -142,7 +142,7 @@ if __name__ == "__main__":
                 )
 
                 # run spike sorting
-                sorting_output_folder = results_folder / f"sortings_{dataset_name}_{session_name}_{filter_option}"
+                sorting_output_folder = results_folder / f"sorting_{dataset_name}_{session_name}_{filter_option}"
                 sorting_output_folder.mkdir(parents=True, exist_ok=True)
 
                 if (sorting_output_folder / "sorting").is_dir() and not OVERWRITE:
