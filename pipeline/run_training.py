@@ -165,6 +165,9 @@ if __name__ == "__main__":
                     recording_processed = recording
                 recording_zscore = spre.zscore(recording_processed)
 
+                if data_type == "sim":
+                    recording = spre.depth_order(recording)
+
                 # train model
                 model_folder = results_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
