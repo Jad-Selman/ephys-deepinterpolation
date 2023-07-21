@@ -93,8 +93,10 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == "true":
             DEBUG = True
+            OVERWRITE = True
         else:
             DEBUG = False
+            OVERWRITE = False
 
     json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
 
@@ -117,19 +119,6 @@ if __name__ == "__main__":
         session_dict = all_sessions
 
     print(session_dict)
-
-    if DEBUG:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 0.2
-        TESTING_START_S = 10
-        TESTING_END_S = 10.05
-        OVERWRITE = True
-    else:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 20
-        TESTING_START_S = 70
-        TESTING_END_S = 70.5
-        OVERWRITE = False
 
     si.set_global_job_kwargs(**job_kwargs)
 
@@ -159,13 +148,15 @@ if __name__ == "__main__":
                 recording, _ = se.read_mearec(DATASET_FOLDER / session)
                 session_name = session_name.split(".")[0]
 
+            if DEBUG:
+                recording = recording.frame_slice(
+                    start_frame=0,
+                    end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                )
+            print(f"\t{recording}")
+
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
-                # train DI models
-                print(f"\t\tTraning DI")
-                training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
-                testing_time = np.round(TESTING_END_S - TESTING_START_S, 3)
-                model_name = f"{filter_option}_t{training_time}s_v{testing_time}s"
 
                 # apply filter and zscore
                 if filter_option == "hp":
