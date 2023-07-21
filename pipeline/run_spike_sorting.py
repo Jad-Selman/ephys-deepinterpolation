@@ -21,7 +21,7 @@ import spikeinterface.qualitymetrics as sqm
 base_path = Path("..").resolve()
 
 ##### DEFINE DATASETS AND FOLDERS #######
-from sessions import all_sessions
+from sessions import all_sessions_exp as all_sessions
 
 n_jobs = 16
 
