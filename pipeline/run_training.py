@@ -5,13 +5,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 #### IMPORTS #######
-import os
 import sys
 import shutil
 import json
 import numpy as np
 from pathlib import Path
-import pandas as pd
 import time
 
 
@@ -31,19 +29,27 @@ import tensorflow as tf
 base_path = Path("..").resolve()
 
 ##### DEFINE DATASETS AND FOLDERS #######
-from sessions import all_sessions
-
-n_jobs = 16
-
-job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
+from sessions import all_sessions_exp, all_sessions_sim
 
 data_folder = base_path / "data"
 scratch_folder = base_path / "scratch"
 results_folder = base_path / "results"
 
 
-# DATASET_BUCKET = "s3://aind-benchmark-data/ephys-compression/aind-np2/"
-DATASET_BUCKET = data_folder / "ephys-compression-benchmark"
+if (data_folder / "ephys-compression-benchmark").is_dir():
+    DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
+    all_sessions = all_sessions_exp
+    data_type = "exp"
+elif (data_folder / "MEArec-NP-recordings").is_dir():
+    DATASET_FOLDER = data_folder / "MEArec-NP-recordings"
+    all_sessions = all_sessions_sim
+    data_type = "sim"
+else:
+    raise Exception("Could not find dataset folder")
+
+
+n_jobs = 16
+job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
 DEBUG = False
 NUM_DEBUG_SESSIONS = 2
@@ -54,9 +60,7 @@ OVERWRITE = False
 USE_GPU = True
 STEPS_PER_EPOCH = 100
 
-# Define training and testing constants (@Jad you can gradually increase this)
-
-
+# Define training and testing constants
 FILTER_OPTIONS = ["bp", "hp"]  # "hp", "bp", "no"
 
 # DI params
@@ -66,7 +70,10 @@ pre_post_omission = 1
 desired_shape = (192, 2)
 
 di_kwargs = dict(
-    pre_frame=pre_frame, post_frame=post_frame, pre_post_omission=pre_post_omission, desired_shape=desired_shape,
+    pre_frame=pre_frame,
+    post_frame=post_frame,
+    pre_post_omission=pre_post_omission,
+    desired_shape=desired_shape,
 )
 
 
@@ -127,34 +134,23 @@ if __name__ == "__main__":
             print(f"\nAnalyzing session {session}\n")
             dataset_name, session_name = session.split("/")
 
-            if str(DATASET_BUCKET).startswith("s3"):
-                raw_data_folder = scratch_folder / "raw"
-                raw_data_folder.mkdir(exist_ok=True)
-
-                # download dataset
-                dst_folder.mkdir(exist_ok=True)
-
-                src_folder = f"{DATASET_BUCKET}{session}"
-
-                cmd = f"aws s3 sync {src_folder} {dst_folder}"
-                # aws command to download
-                os.system(cmd)
+            if data_type == "exp":
+                recording = si.load_extractor(DATASET_FOLDER / session)
             else:
-                raw_data_folder = DATASET_BUCKET
-                dst_folder = raw_data_folder / session
+                recording, _ = se.read_mearec(DATASET_FOLDER / session)
+                session_name = session_name.split(".")[0]
+                recording = spre.depth_order(recording)
 
-            recording_folder = dst_folder
-            recording = si.load_extractor(recording_folder)
             if DEBUG:
                 recording = recording.frame_slice(
-                    start_frame=0, end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                    start_frame=0,
+                    end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                 )
-            print(recording)
+            print(f"\t{recording}")
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
                 # train DI models
-                print(f"\t\tTraning DI")
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
                 testing_time = np.round(TESTING_END_S - TESTING_START_S, 3)
                 model_name = f"{filter_option}_t{training_time}s_v{testing_time}s"
@@ -193,7 +189,3 @@ if __name__ == "__main__":
     for json_file in json_files:
         print(f"Copying JSON file: {json_file.name} to {results_folder}")
         shutil.copy(json_file, results_folder)
-
-    print("Results folder content:")
-    for p in results_folder.iterdir():
-        print(p.name)

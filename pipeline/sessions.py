@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-all_sessions = {
+all_sessions_exp = {
     "NP1": [
         "aind-np1/625749_2022-08-03_15-15-06_ProbeA",
         "aind-np1/634568_2022-08-05_15-59-46_ProbeA",
@@ -24,10 +24,32 @@ all_sessions = {
     ],
 }
 
+all_sessions_sim = {
+    "NP1": [
+        "NP1/recording-0.h5",
+        "NP1/recording-1.h5",
+        "NP1/recording-2.h5",
+        "NP1/recording-3.h5",
+        "NP1/recording-4.h5",
+    ],
+    "NP2": [
+        "NP2/recording-0.h5",
+        "NP2/recording-1.h5",
+        "NP2/recording-2.h5",
+        "NP2/recording-3.h5",
+        "NP2/recording-4.h5",
+    ],
+}
 
-def generate_job_config_list(output_folder, split_probes=True):
+
+def generate_job_config_list(output_folder, split_probes=True, dataset="exp"):
     output_folder = Path(output_folder)
     output_folder.mkdir(exist_ok=True, parents=True)
+
+    if dataset == "exp":
+        all_sessions = all_sessions_exp
+    else:
+        all_sessions = all_sessions_sim
 
     i = 0
     for probe, sessions in all_sessions.items():

@@ -34,9 +34,10 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 base_path = Path("..").resolve()
 
 ##### DEFINE DATASETS AND FOLDERS #######
-from sessions import all_sessions
+from sessions import all_sessions_exp, all_sessions_sim
 
 n_jobs = 16
+
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
 data_folder = base_path / "data"
@@ -44,8 +45,19 @@ scratch_folder = base_path / "scratch"
 results_folder = base_path / "results"
 
 
-# DATASET_BUCKET = "s3://aind-benchmark-data/ephys-compression/aind-np2/"
-DATASET_BUCKET = data_folder / "ephys-compression-benchmark"
+if (data_folder / "ephys-compression-benchmark").is_dir():
+    DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
+    all_sessions = all_sessions_exp
+    data_type = "exp"
+elif (data_folder / "MEArec-NP-recordings").is_dir():
+    DATASET_FOLDER = data_folder / "MEArec-NP-recordings"
+    all_sessions = all_sessions_sim
+    data_type = "sim"
+else:
+    raise Exception("Could not find dataset folder")
+
+
+DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
 
 DEBUG = False
 NUM_DEBUG_SESSIONS = 2
@@ -73,7 +85,10 @@ inference_predict_workers = 8
 inference_memory_gpu = 2000  # MB
 
 di_kwargs = dict(
-    pre_frame=pre_frame, post_frame=post_frame, pre_post_omission=pre_post_omission, desired_shape=desired_shape,
+    pre_frame=pre_frame,
+    post_frame=post_frame,
+    pre_post_omission=pre_post_omission,
+    desired_shape=desired_shape,
 )
 
 if __name__ == "__main__":
@@ -140,29 +155,12 @@ if __name__ == "__main__":
             print(f"\nAnalyzing session {session}\n")
             dataset_name, session_name = session.split("/")
 
-            if str(DATASET_BUCKET).startswith("s3"):
-                raw_data_folder = scratch_folder / "raw"
-                raw_data_folder.mkdir(exist_ok=True)
-                dst_folder = raw_data_folder / session
-
-                # download dataset
-                dst_folder.mkdir(exist_ok=True)
-
-                src_folder = f"{DATASET_BUCKET}{session}"
-
-                cmd = f"aws s3 sync --no-sign-request {src_folder} {dst_folder}"
-                # aws command to download
-                os.system(cmd)
+            if data_type == "exp":
+                recording = si.load_extractor(DATASET_FOLDER / session)
             else:
-                raw_data_folder = DATASET_BUCKET
-                dst_folder = raw_data_folder / session
-
-            recording_folder = dst_folder
-            recording = si.load_extractor(recording_folder)
-            if DEBUG:
-                recording = recording.frame_slice(
-                    start_frame=0, end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
-                )
+                recording, _ = se.read_mearec(DATASET_FOLDER / session)
+                session_name = session_name.split(".")[0]
+                recording = spre.depth_order(recording)
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
@@ -203,7 +201,9 @@ if __name__ == "__main__":
                         use_gpu=USE_GPU,
                     )
                     recording_di = recording_di.save(
-                        folder=output_folder, n_jobs=inference_n_jobs, chunk_duration=inference_chunk_duration,
+                        folder=output_folder,
+                        n_jobs=inference_n_jobs,
+                        chunk_duration=inference_chunk_duration,
                     )
                     t_stop_inference = time.perf_counter()
                     elapsed_time_inference = np.round(t_stop_inference - t_start_inference, 2)

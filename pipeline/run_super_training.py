@@ -43,8 +43,8 @@ scratch_folder = base_path / "scratch"
 results_folder = base_path / "results"
 
 
-# DATASET_BUCKET = "s3://aind-benchmark-data/ephys-compression/aind-np2/"
-DATASET_BUCKET = data_folder / "ephys-compression-benchmark"
+# DATASET_FOLDER = "s3://aind-benchmark-data/ephys-compression/aind-np2/"
+DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
 
 DEBUG = False
 NUM_DEBUG_SESSIONS = 4
@@ -67,7 +67,10 @@ pre_post_omission = 1
 desired_shape = (192, 2)
 
 di_kwargs = dict(
-    pre_frame=pre_frame, post_frame=post_frame, pre_post_omission=pre_post_omission, desired_shape=desired_shape,
+    pre_frame=pre_frame,
+    post_frame=post_frame,
+    pre_post_omission=pre_post_omission,
+    desired_shape=desired_shape,
 )
 
 
@@ -112,27 +115,28 @@ if __name__ == "__main__":
             print(f"\tRunning super training with {len(sessions_to_use)} sessions")
             for i, session in enumerate(sessions_to_use):
                 print(f"\t\tSession {session} - Iteration {i}\n")
-                if str(DATASET_BUCKET).startswith("s3"):
+                if str(DATASET_FOLDER).startswith("s3"):
                     raw_data_folder = scratch_folder / "raw"
                     raw_data_folder.mkdir(exist_ok=True)
 
                     # download dataset
                     dst_folder.mkdir(exist_ok=True)
 
-                    src_folder = f"{DATASET_BUCKET}{session}"
+                    src_folder = f"{DATASET_FOLDER}{session}"
 
                     cmd = f"aws s3 sync {src_folder} {dst_folder}"
                     # aws command to download
                     os.system(cmd)
                 else:
-                    raw_data_folder = DATASET_BUCKET
+                    raw_data_folder = DATASET_FOLDER
                     dst_folder = raw_data_folder / session
 
                 recording_folder = dst_folder
                 recording = si.load_extractor(recording_folder)
                 if DEBUG:
                     recording = recording.frame_slice(
-                        start_frame=0, end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
+                        start_frame=0,
+                        end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                     )
 
                 # train DI models

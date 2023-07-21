@@ -5,15 +5,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 #### IMPORTS #######
-import os
 import sys
 import json
-import numpy as np
 from pathlib import Path
-from numba import cuda
 import pandas as pd
-import time
-
 
 # SpikeInterface
 import spikeinterface as si
@@ -35,15 +30,6 @@ job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 data_folder = base_path / "data"
 scratch_folder = base_path / "scratch"
 results_folder = base_path / "results"
-
-
-# DATASET_BUCKET = "s3://aind-benchmark-data/ephys-compression/aind-np2/"
-DATASET_BUCKET = data_folder / "ephys-compression-benchmark" / "aind-np2"
-
-DEBUG = False
-NUM_DEBUG_SESSIONS = 2
-DEBUG_DURATION = 20
-OVERWRITE = False
 
 
 # Define training and testing constants
