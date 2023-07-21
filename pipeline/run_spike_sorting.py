@@ -17,10 +17,8 @@ import time
 
 # SpikeInterface
 import spikeinterface as si
-import spikeinterface.extractors as se
-import spikeinterface.preprocessing as spre
 import spikeinterface.sorters as ss
-import spikeinterface.postprocessing as spost
+import spikeinterface.curation as scur
 import spikeinterface.comparison as sc
 import spikeinterface.qualitymetrics as sqm
 
@@ -158,6 +156,7 @@ if __name__ == "__main__":
                         verbose=True,
                         singularity_image=singularity_image,
                     )
+                    sorting = scur.remove_excess_spikes(sorting, recording)
                     sorting = sorting.save(folder=sorting_output_folder / "sorting")
 
                 if (sorting_output_folder / "sorting_di").is_dir() and not OVERWRITE:
@@ -173,6 +172,7 @@ if __name__ == "__main__":
                         verbose=True,
                         singularity_image=singularity_image,
                     )
+                    sorting_di = scur.remove_excess_spikes(sorting_di, recording_di)
                     sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
 
                 # compare outputs
