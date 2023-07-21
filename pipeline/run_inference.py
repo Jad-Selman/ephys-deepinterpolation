@@ -160,7 +160,6 @@ if __name__ == "__main__":
             else:
                 recording, _ = se.read_mearec(DATASET_FOLDER / session)
                 session_name = session_name.split(".")[0]
-                recording = spre.depth_order(recording)
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
@@ -178,6 +177,9 @@ if __name__ == "__main__":
                 else:
                     recording_processed = recording
                 recording_zscore = spre.zscore(recording_processed)
+
+                if data_type == "sim":
+                    recording_zscore = spre.depth_order(recording_zscore)
 
                 # train model
                 model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
