@@ -81,6 +81,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] == "true":
             DEBUG = True
+            STEPS_PER_EPOCH = 10
         else:
             DEBUG = False
 
