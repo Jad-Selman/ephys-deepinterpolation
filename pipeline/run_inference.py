@@ -57,8 +57,6 @@ else:
     raise Exception("Could not find dataset folder")
 
 
-DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
-
 DEBUG = False
 NUM_DEBUG_SESSIONS = 2
 DEBUG_DURATION = 20
