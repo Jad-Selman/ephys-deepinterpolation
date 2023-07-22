@@ -78,9 +78,9 @@ post_frame = 30
 pre_post_omission = 1
 desired_shape = (192, 2)
 # play around with these
-inference_n_jobs = 16
-inference_chunk_duration = "500ms"
-inference_predict_workers = 8
+inference_n_jobs = -1
+inference_chunk_duration = "1s"
+inference_predict_workers = 1
 inference_memory_gpu = 2000  # MB
 
 di_kwargs = dict(
