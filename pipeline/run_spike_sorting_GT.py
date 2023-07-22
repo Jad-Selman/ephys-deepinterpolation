@@ -148,8 +148,8 @@ if __name__ == "__main__":
                 cmp = sc.compare_sorter_to_ground_truth(sorting_gt, sorting, exhaustive_gt=True)
                 cmp_di = sc.compare_sorter_to_ground_truth(sorting_gt, sorting_di, exhaustive_gt=True)
 
-                perf_avg = cmp.get_performance(method="pooled_with_average", output="dict")
-                perf_avg_di = cmp_di.get_performance(method="pooled_with_average", output="dict")
+                perf_avg = cmp.get_performance(method="pooled_with_average")
+                perf_avg_di = cmp_di.get_performance(method="pooled_with_average")
                 counts = cmp.count_units_categories()
                 counts_di = cmp.count_units_categories()
 
@@ -164,10 +164,10 @@ if __name__ == "__main__":
                 new_data_di = new_data.copy()
                 new_data_di["deepinteprolated"] = True
 
-                new_data.update(perf_avg)
+                new_data.update(perf_avg.to_dict())
                 new_data.update(counts.to_dict())
 
-                new_data_di.update(perf_avg_di)
+                new_data_di.update(perf_avg_di.to_dict())
                 new_data_di.update(counts_di.to_dict())
 
                 new_df = pd.DataFrame(new_data)
