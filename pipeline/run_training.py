@@ -167,7 +167,8 @@ if __name__ == "__main__":
 
                 if data_type == "sim":
                     recording_zscore = spre.depth_order(recording_zscore)
-                    recording_zscore = recording_zscore.save(folder=scratch_folder / "recording_zscored")
+                # This speeds things up a lot    
+                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / "recording_zscored")
 
                 # train model
                 model_folder = results_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
@@ -175,7 +176,7 @@ if __name__ == "__main__":
                 # Use SI function
                 t_start_training = time.perf_counter()
                 model_path = spre.train_deepinterpolation(
-                    recording_zscore,
+                    recording_zscore_bin,
                     model_folder=model_folder,
                     model_name=model_name,
                     train_start_s=TRAINING_START_S,

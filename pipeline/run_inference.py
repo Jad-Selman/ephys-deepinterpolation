@@ -170,7 +170,8 @@ if __name__ == "__main__":
 
                 if data_type == "sim":
                     recording_zscore = spre.depth_order(recording_zscore)
-                    recording_zscore = recording_zscore.save(folder=scratch_folder / "recording_zscored")
+                # This speeds things up a lot
+                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / "recording_zscored")
 
                 # train model
                 model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
@@ -184,7 +185,7 @@ if __name__ == "__main__":
                     t_start_inference = time.perf_counter()
                     output_folder.parent.mkdir(exist_ok=True, parents=True)
                     recording_di = spre.deepinterpolate(
-                        recording_zscore,
+                        recording_zscore_bin,
                         model_path=model_path,
                         pre_frame=pre_frame,
                         post_frame=post_frame,
