@@ -166,10 +166,11 @@ if __name__ == "__main__":
                     recording_processed = spre.bandpass_filter(recording)
                 else:
                     recording_processed = recording
-                recording_zscore = spre.zscore(recording_processed)
 
                 if data_type == "sim":
-                    recording_zscore = spre.depth_order(recording_zscore)
+                    recording_processed = spre.depth_order(recording_processed)
+
+                recording_zscore = spre.zscore(recording_processed)
                 # This speeds things up a lot
                 recording_zscore_bin = recording_zscore.save(folder=scratch_folder / "recording_zscored")
 
