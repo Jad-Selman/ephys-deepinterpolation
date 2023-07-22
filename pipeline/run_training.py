@@ -151,6 +151,7 @@ if __name__ == "__main__":
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
+                recording_name = f"{dataset_name}_{session_name}_{filter_option}"
                 # train DI models
                 training_time = np.round(TRAINING_END_S - TRAINING_START_S, 3)
                 testing_time = np.round(TESTING_END_S - TESTING_START_S, 3)
@@ -169,10 +170,10 @@ if __name__ == "__main__":
 
                 recording_zscore = spre.zscore(recording_processed)
                 # This speeds things up a lot    
-                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / "recording_zscored")
+                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / f"recording_zscored_{recording_name}")
 
                 # train model
-                model_folder = results_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
+                model_folder = results_folder / f"model_{recording_name}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
                 # Use SI function
                 t_start_training = time.perf_counter()

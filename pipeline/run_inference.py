@@ -158,6 +158,7 @@ if __name__ == "__main__":
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
+                recording_name = f"{dataset_name}_{session_name}_{filter_option}"
 
                 # apply filter and zscore
                 if filter_option == "hp":
@@ -172,13 +173,13 @@ if __name__ == "__main__":
 
                 recording_zscore = spre.zscore(recording_processed)
                 # This speeds things up a lot
-                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / "recording_zscored")
+                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / f"recording_zscored_{recording_name}")
 
                 # train model
-                model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
+                model_folder = data_model_folder / f"model_{recording_name}"
                 model_path = [p for p in model_folder.iterdir() if p.name.endswith("model.h5")][0]
                 # full inference
-                output_folder = results_folder / f"deepinterpolated_{dataset_name}_{session_name}_{filter_option}"
+                output_folder = results_folder / f"deepinterpolated_{recording_name}"
                 if OVERWRITE and output_folder.is_dir():
                     shutil.rmtree(output_folder)
 
@@ -212,7 +213,7 @@ if __name__ == "__main__":
                 recording_di = spre.scale(recording_di, gain=inverse_gains, offset=inverse_offset, dtype="float")
 
                 # save processed json
-                processed_folder = results_folder / f"processed_{dataset_name}_{session_name}_{filter_option}"
+                processed_folder = results_folder / f"processed_{recording_name}"
                 processed_folder.mkdir(exist_ok=True, parents=True)
                 recording_processed.dump_to_json(processed_folder / "processed.json", relative_to=results_folder)
                 recording_di.dump_to_json(processed_folder / f"deepinterpolated.json", relative_to=results_folder)
