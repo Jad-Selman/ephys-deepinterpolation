@@ -167,6 +167,7 @@ if __name__ == "__main__":
 
                 if data_type == "sim":
                     recording_zscore = spre.depth_order(recording_zscore)
+                    recording_zscore = recording_zscore.save(folder=scratch_folder / "recording_zscored")
 
                 # train model
                 model_folder = results_folder / f"model_{dataset_name}_{session_name}_{filter_option}"

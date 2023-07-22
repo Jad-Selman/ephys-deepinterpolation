@@ -37,7 +37,7 @@ base_path = Path("..").resolve()
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim
 
-n_jobs = 16
+n_jobs = -1
 
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
@@ -170,6 +170,7 @@ if __name__ == "__main__":
 
                 if data_type == "sim":
                     recording_zscore = spre.depth_order(recording_zscore)
+                    recording_zscore = recording_zscore.save(folder=scratch_folder / "recording_zscored")
 
                 # train model
                 model_folder = data_model_folder / f"model_{dataset_name}_{session_name}_{filter_option}"
