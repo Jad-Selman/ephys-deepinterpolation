@@ -53,10 +53,7 @@ DEBUG_DURATION = 20
 ##### DEFINE PARAMS #####
 OVERWRITE = False
 USE_GPU = True
-FULL_INFERENCE = True
-
-# Define training and testing constants (@Jad you can gradually increase this)
-
+STEPS_PER_EPOCH = 100
 
 FILTER_OPTIONS = ["bp", "hp"]  # "hp", "bp", "no"
 
@@ -91,6 +88,7 @@ if __name__ == "__main__":
         TRAINING_END_S = 0.2
         TESTING_START_S = 10
         TESTING_END_S = 10.05
+        STEPS_PER_EPOCH = 10
         OVERWRITE = True
     else:
         TRAINING_START_S = 0
@@ -167,6 +165,9 @@ if __name__ == "__main__":
                     train_end_s=TRAINING_END_S,
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
+                    verbose=False,
+                    nb_gpus=1,
+                    steps_per_epoch=STEPS_PER_EPOCH,
                     **di_kwargs,
                 )
                 pretrained_model_path = model_path

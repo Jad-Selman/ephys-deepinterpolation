@@ -65,7 +65,7 @@ DEBUG_DURATION = 20
 ##### DEFINE PARAMS #####
 OVERWRITE = False
 USE_GPU = True
-FULL_INFERENCE = True
+
 
 # Define training and testing constants (@Jad you can gradually increase this)
 
