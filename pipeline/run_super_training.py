@@ -47,6 +47,7 @@ results_folder = base_path / "results"
 DATASET_FOLDER = data_folder / "ephys-compression-benchmark"
 
 DEBUG = False
+PROBESET = "NP2"
 NUM_DEBUG_SESSIONS = 4
 DEBUG_DURATION = 20
 
