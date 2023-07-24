@@ -170,13 +170,14 @@ if __name__ == "__main__":
                 new_data_di.update(perf_avg_di.to_dict())
                 new_data_di.update(counts_di.to_dict())
 
-                new_df = pd.DataFrame(new_data)
-                new_df = pd.concat([new_df, pd.DataFrame(new_data_di)], ignore_index=True)
+                new_df = pd.DataFrame([new_data])
+                new_df_di = pd.DataFrame([new_data_di])
+                new_df_session = pd.concat([new_df, new_df_di], ignore_index=True)
 
                 if session_level_results is None:
-                    session_level_results = new_df
+                    session_level_results = new_df_session
                 else:
-                    session_level_results = pd.concat([session_level_results, new_df], ignore_index=True)
+                    session_level_results = pd.concat([session_level_results, new_df_session], ignore_index=True)
 
                 # by unit
                 perf_by_unit = cmp.get_performance(method="by_unit")
