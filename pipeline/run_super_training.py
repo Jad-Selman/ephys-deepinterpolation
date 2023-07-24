@@ -75,11 +75,12 @@ di_kwargs = dict(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         if sys.argv[1] == "true":
             DEBUG = True
         else:
             DEBUG = False
+        PROBESET = sys.argv[2]
 
     session_dict = all_sessions
 
@@ -100,19 +101,25 @@ if __name__ == "__main__":
 
     si.set_global_job_kwargs(**job_kwargs)
 
+    assert PROBESET in ["NP1", "NP2", "NP1-NP2"]
+
+    probes = PROBESET.split("-")
+
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
 
-    pretrained_model_path = None
     for filter_option in FILTER_OPTIONS:
         print(f"Filter option: {filter_option}")
 
-        for probe, sessions in session_dict.items():
+        for probe in probes:
+            sessions = all_sessions[probe]
             print(f"\tDataset {probe}")
             if DEBUG:
                 sessions_to_use = sessions[:NUM_DEBUG_SESSIONS]
             else:
                 sessions_to_use = sessions
             print(f"\tRunning super training with {len(sessions_to_use)} sessions")
+
+            pretrained_model_path = None
             for i, session in enumerate(sessions_to_use):
                 print(f"\t\tSession {session} - Iteration {i}\n")
                 dataset_name, session_name = session.split("/")
@@ -144,7 +151,7 @@ if __name__ == "__main__":
                 recording_zscore_bin = recording_zscore.save(folder=scratch_folder / f"recording_zscored_{recording_name}")
 
                 # train model
-                model_folder = results_folder / f"models_{filter_option}" / f"iter{i}"
+                model_folder = results_folder / f"models_{probe}_{filter_option}" / f"iter{i}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
 
                 # Use SI function
@@ -167,33 +174,33 @@ if __name__ == "__main__":
                 elapsed_time_training = np.round(t_stop_training - t_start_training, 2)
                 print(f"\t\tElapsed time TRAINING {session}-{filter_option}: {elapsed_time_training}s")
 
-        # aggregate results
-        print(f"Aggregating results for {filter_option}")
-        final_model_folder = results_folder / f"model_{filter_option}"
-        shutil.copytree(model_folder, final_model_folder)
-        final_model_name = [p.name for p in final_model_folder.iterdir() if "_model" in p.name][0]
-        final_model_stem = final_model_name.split("_model")[0]
+            # aggregate results
+            print(f"Aggregating results for {probe}-{filter_option}")
+            final_model_folder = results_folder / f"model_{probe}_{filter_option}"
+            shutil.copytree(model_folder, final_model_folder)
+            final_model_name = [p.name for p in final_model_folder.iterdir() if "_model" in p.name][0]
+            final_model_stem = final_model_name.split("_model")[0]
 
-        # concatenate loss and val loss
-        loss_accuracies = np.array([])
-        val_accuracies = np.array([])
+            # concatenate loss and val loss
+            loss_accuracies = np.array([])
+            val_accuracies = np.array([])
 
-        for i in range(len(sessions_to_use)):
-            model_folder = results_folder / f"models_{filter_option}" / f"iter{i}"
-            loss_file = [p for p in model_folder.iterdir() if "_loss.npy" in p.name and "val" not in p.name][0]
-            val_loss_file = [p for p in model_folder.iterdir() if "val_loss.npy" in p.name][0]
-            loss = np.load(loss_file)
-            val_loss = np.load(val_loss_file)
-            loss_accuracies = np.concatenate((loss_accuracies, loss))
-            val_accuracies = np.concatenate((val_accuracies, val_loss))
-        np.save(final_model_folder / f"{final_model_stem}_loss.npy", loss_accuracies)
-        np.save(final_model_folder / f"{final_model_stem}_val_loss.npy", val_accuracies)
+            for i in range(len(sessions_to_use)):
+                model_folder = results_folder / f"models_{probe}_{filter_option}" / f"iter{i}"
+                loss_file = [p for p in model_folder.iterdir() if "_loss.npy" in p.name and "val" not in p.name][0]
+                val_loss_file = [p for p in model_folder.iterdir() if "val_loss.npy" in p.name][0]
+                loss = np.load(loss_file)
+                val_loss = np.load(val_loss_file)
+                loss_accuracies = np.concatenate((loss_accuracies, loss))
+                val_accuracies = np.concatenate((val_accuracies, val_loss))
+            np.save(final_model_folder / f"{final_model_stem}_loss.npy", loss_accuracies)
+            np.save(final_model_folder / f"{final_model_stem}_val_loss.npy", val_accuracies)
 
-        # plot losses
-        fig, ax = plt.subplots()
-        ax.plot(loss_accuracies, color="C0", label="loss")
-        ax.plot(val_accuracies, color="C1", label="val_loss")
-        ax.set_xlabel("number of epochs")
-        ax.set_ylabel("training loss")
-        ax.legend()
-        fig.savefig(final_model_folder / f"{final_model_stem}_losses.png", dpi=300)
+            # plot losses
+            fig, ax = plt.subplots()
+            ax.plot(loss_accuracies, color="C0", label="loss")
+            ax.plot(val_accuracies, color="C1", label="val_loss")
+            ax.set_xlabel("number of epochs")
+            ax.set_ylabel("training loss")
+            ax.legend()
+            fig.savefig(final_model_folder / f"{final_model_stem}_losses.png", dpi=300)
