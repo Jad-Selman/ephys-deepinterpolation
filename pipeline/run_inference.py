@@ -37,7 +37,7 @@ base_path = Path("..")
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim
 
-n_jobs = os.cpu_count() - 4
+n_jobs = int(0.7 * (os.cpu_count()))
 
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
@@ -78,7 +78,7 @@ post_frame = 30
 pre_post_omission = 1
 desired_shape = (192, 2)
 # play around with these
-inference_n_jobs = os.cpu_count() - 4
+inference_n_jobs = int(0.7 * (os.cpu_count()))
 inference_chunk_duration = "1s"
 inference_predict_workers = 1
 inference_memory_gpu = 2000  # MB
