@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 perf_avg = cmp.get_performance(method="pooled_with_average")
                 perf_avg_di = cmp_di.get_performance(method="pooled_with_average")
                 counts = cmp.count_units_categories()
-                counts_di = cmp.count_units_categories()
+                counts_di = cmp_di.count_units_categories()
 
                 new_data = {
                     "probe": probe,
@@ -167,7 +167,7 @@ if __name__ == "__main__":
                 }
                 new_data_di = new_data.copy()
                 new_data_di["deepinterpolated"] = True
-                new_data_di["num_units"] = len(sorting_di.unit_ids),
+                new_data_di["num_units"] = len(sorting_di.unit_ids)
 
                 new_data.update(perf_avg.to_dict())
                 new_data.update(counts.to_dict())
