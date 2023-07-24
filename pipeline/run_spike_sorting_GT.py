@@ -186,6 +186,7 @@ if __name__ == "__main__":
 
                 # by unit
                 perf_by_unit = cmp.get_performance(method="by_unit")
+                perf_columns = perf_by_unit.columns
                 perf_by_unit.loc[:, "probe"] = [probe] * len(perf_by_unit)
                 perf_by_unit.loc[:, "session"] = [session_name] * len(perf_by_unit)
                 perf_by_unit.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit)
@@ -207,7 +208,7 @@ if __name__ == "__main__":
                     unit_level_results = pd.concat([unit_level_results, new_unit_df], ignore_index=True)
 
             sorted_columns = ["probe", "session", "filter_option", "deepinterpolated", "unit_id"]
-            for col in perf_by_unit.columns:
+            for col in perf_columns:
                 sorted_columns.append(col)
             unit_level_results = unit_level_results[sorted_columns]
 
