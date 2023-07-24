@@ -26,7 +26,7 @@ import spikeinterface.qualitymetrics as sqm
 import tensorflow as tf
 
 # runs from "codes"
-base_path = Path("..").resolve()
+base_path = Path("..")
 
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim

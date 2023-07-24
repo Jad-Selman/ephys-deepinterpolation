@@ -104,10 +104,6 @@ if __name__ == "__main__":
                 # save processed json
                 processed_json_folder = processed_folder / f"processed_{dataset_name}_{session_name}_{filter_option}"
 
-                print(os.getcwd())
-                print("Processed JSON file: ", processed_json_folder / "processed.json")
-                print("DeepInterpolated JSON file: ", processed_json_folder / "deepinterpolated.json")
-
                 recording = si.load_extractor(processed_json_folder / "processed.json", base_folder=data_folder)
                 recording_di = si.load_extractor(
                     processed_json_folder / "deepinterpolated.json", base_folder=processed_folder

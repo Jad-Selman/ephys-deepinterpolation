@@ -29,10 +29,10 @@ import spikeinterface.qualitymetrics as sqm
 import tensorflow as tf
 
 
-base_path = Path("..").resolve()
+base_path = Path("..")
 
 ##### DEFINE DATASETS AND FOLDERS #######
-from sessions import all_sessions
+from sessions import all_sessions_exp as all_sessions
 
 n_jobs = 16
 
@@ -115,24 +115,11 @@ if __name__ == "__main__":
             print(f"\tRunning super training with {len(sessions_to_use)} sessions")
             for i, session in enumerate(sessions_to_use):
                 print(f"\t\tSession {session} - Iteration {i}\n")
-                if str(DATASET_FOLDER).startswith("s3"):
-                    raw_data_folder = scratch_folder / "raw"
-                    raw_data_folder.mkdir(exist_ok=True)
+                dataset_name, session_name = session.split("/")
+                recording_name = f"{dataset_name}_{session_name}_{filter_option}"
 
-                    # download dataset
-                    dst_folder.mkdir(exist_ok=True)
+                recording = si.load_extractor(DATASET_FOLDER / session)
 
-                    src_folder = f"{DATASET_FOLDER}{session}"
-
-                    cmd = f"aws s3 sync {src_folder} {dst_folder}"
-                    # aws command to download
-                    os.system(cmd)
-                else:
-                    raw_data_folder = DATASET_FOLDER
-                    dst_folder = raw_data_folder / session
-
-                recording_folder = dst_folder
-                recording = si.load_extractor(recording_folder)
                 if DEBUG:
                     recording = recording.frame_slice(
                         start_frame=0,
@@ -153,14 +140,19 @@ if __name__ == "__main__":
                     recording_processed = recording
                 recording_zscore = spre.zscore(recording_processed)
 
+                # This speeds things up a lot
+                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / f"recording_zscored_{recording_name}")
+
                 # train model
                 model_folder = results_folder / f"models_{filter_option}" / f"iter{i}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
 
                 # Use SI function
                 t_start_training = time.perf_counter()
+                if pretrained_model_path is not None:
+                    print(f"\t\tUsing pretrained model: {pretrained_model_path}")
                 model_path = spre.train_deepinterpolation(
-                    recording_zscore,
+                    recording_zscore_bin,
                     model_folder=model_folder,
                     model_name=model_name,
                     existing_model_path=pretrained_model_path,

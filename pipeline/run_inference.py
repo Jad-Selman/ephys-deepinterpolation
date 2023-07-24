@@ -32,7 +32,7 @@ import tensorflow as tf
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
-base_path = Path("..").resolve()
+base_path = Path("..")
 
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim

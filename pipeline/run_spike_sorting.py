@@ -18,7 +18,7 @@ import spikeinterface.comparison as sc
 import spikeinterface.qualitymetrics as sqm
 
 
-base_path = Path("..").resolve()
+base_path = Path("..")
 
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp as all_sessions
