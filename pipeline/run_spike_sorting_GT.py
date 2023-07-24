@@ -109,6 +109,7 @@ if __name__ == "__main__":
 
                 # DEBUG mode
                 if recording.get_num_samples() < recording_gt.get_num_samples():
+                    print("DEBUG MODE: slicing GT")
                     sorting_gt = sorting_gt.frame_slice(start_frame=0, end_frame=recording.get_num_samples())
 
                 # run spike sorting
