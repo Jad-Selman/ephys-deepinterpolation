@@ -37,7 +37,7 @@ base_path = Path("..")
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim
 
-n_jobs = -1
+n_jobs = os.cpu_count() - 4
 
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
