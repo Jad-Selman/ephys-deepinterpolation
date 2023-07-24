@@ -206,10 +206,10 @@ if __name__ == "__main__":
                 else:
                     unit_level_results = pd.concat([unit_level_results, new_unit_df], ignore_index=True)
 
-                sorted_columns = ["probe", "session", "filter_option", "deepinterpolated", "unit_id"]
-                for col in perf_by_unit.columns:
-                    sorted_columns.append(col)
-                unit_level_results = unit_level_results[sorted_columns]
+            sorted_columns = ["probe", "session", "filter_option", "deepinterpolated", "unit_id"]
+            for col in perf_by_unit.columns:
+                sorted_columns.append(col)
+            unit_level_results = unit_level_results[sorted_columns]
 
             session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
             unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
