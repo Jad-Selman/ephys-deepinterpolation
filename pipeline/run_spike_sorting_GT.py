@@ -90,7 +90,7 @@ if __name__ == "__main__":
             print(f"\nAnalyzing session {session}\n")
             dataset_name, session_name = session.split("/")
 
-            _, sorting_gt = se.read_mearec(DATASET_FOLDER / session)
+            recording_gt, sorting_gt = se.read_mearec(DATASET_FOLDER / session)
             session_name = session_name.split(".")[0]
 
             session_level_results = None
@@ -106,6 +106,10 @@ if __name__ == "__main__":
                 recording_di = si.load_extractor(
                     processed_json_folder / "deepinterpolated.json", base_folder=processed_folder
                 )
+
+                # DEBUG mode
+                if recording.get_num_samples() < recording_gt.get_num_samples():
+                    sorting_gt = sorting_gt.frame_slice(start_frame=0, end_frame=recording.get_num_samples())
 
                 # run spike sorting
                 sorting_output_folder = results_folder / f"sorting_{dataset_name}_{session_name}_{filter_option}"
@@ -157,12 +161,12 @@ if __name__ == "__main__":
                     "probe": probe,
                     "session": session_name,
                     "num_units": len(sorting.unit_ids),
-                    "num_units_di": len(sorting_di.unit_ids),
                     "filter_option": filter_option,
-                    "deepinteprolated": False,
+                    "deepinterpolated": False,
                 }
                 new_data_di = new_data.copy()
-                new_data_di["deepinteprolated"] = True
+                new_data_di["deepinterpolated"] = True
+                new_data_di["num_units"] = len(sorting_di.unit_ids),
 
                 new_data.update(perf_avg.to_dict())
                 new_data.update(counts.to_dict())

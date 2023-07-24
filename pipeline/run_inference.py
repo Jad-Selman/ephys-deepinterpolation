@@ -78,7 +78,7 @@ post_frame = 30
 pre_post_omission = 1
 desired_shape = (192, 2)
 # play around with these
-inference_n_jobs = -1
+inference_n_jobs = os.cpu_count() - 4
 inference_chunk_duration = "1s"
 inference_predict_workers = 1
 inference_memory_gpu = 2000  # MB
@@ -91,13 +91,15 @@ di_kwargs = dict(
 )
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 4:
         if sys.argv[1] == "true":
             DEBUG = True
             OVERWRITE = True
         else:
             DEBUG = False
             OVERWRITE = False
+        inference_n_jobs = int(sys.argv[2])
+        inference_predict_workers = int(sys.argv[3])
 
     json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
 
