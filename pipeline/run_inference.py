@@ -37,7 +37,7 @@ base_path = Path("..")
 ##### DEFINE DATASETS AND FOLDERS #######
 from sessions import all_sessions_exp, all_sessions_sim
 
-n_jobs = int(0.7 * (os.cpu_count()))
+n_jobs = 24
 
 job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
 
@@ -78,7 +78,7 @@ post_frame = 30
 pre_post_omission = 1
 desired_shape = (192, 2)
 # play around with these
-inference_n_jobs = int(0.7 * (os.cpu_count()))
+inference_n_jobs = 24
 inference_chunk_duration = "1s"
 inference_predict_workers = 1
 inference_memory_gpu = 2000  # MB
@@ -91,15 +91,16 @@ di_kwargs = dict(
 )
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 5:
         if sys.argv[1] == "true":
             DEBUG = True
             OVERWRITE = True
         else:
             DEBUG = False
             OVERWRITE = False
-        inference_n_jobs = int(sys.argv[2])
-        inference_predict_workers = int(sys.argv[3])
+        n_jobs = int(sys.argv[2])
+        inference_n_jobs = int(sys.argv[3])
+        inference_predict_workers = int(sys.argv[4])
 
     json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
 
