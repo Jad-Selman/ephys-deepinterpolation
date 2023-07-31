@@ -279,7 +279,7 @@ if __name__ == "__main__":
                     # append new entries
                     unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
 
-            if session_level_results is None:
+            if session_level_results is not None:
                 session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
-            if unit_level_results is None:
+            if unit_level_results is not None:
                 unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
