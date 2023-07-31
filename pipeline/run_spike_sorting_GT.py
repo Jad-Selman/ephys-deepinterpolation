@@ -9,6 +9,7 @@ import os
 import sys
 import json
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 
@@ -18,7 +19,6 @@ import spikeinterface.extractors as se
 import spikeinterface.sorters as ss
 import spikeinterface.curation as scur
 import spikeinterface.comparison as sc
-import spikeinterface.qualitymetrics as sqm
 
 
 base_path = Path("..")
@@ -123,59 +123,93 @@ if __name__ == "__main__":
                     sorting = si.load_extractor(sorting_output_folder / "sorting")
                 else:
                     print(f"\t\tSpike sorting NO DI with {sorter_name}")
-                    sorting = ss.run_sorter(
-                        sorter_name,
-                        recording=recording,
-                        output_folder=scratch_folder / session / filter_option / "no_di",
-                        n_jobs=n_jobs,
-                        verbose=True,
-                        singularity_image=singularity_image,
-                    )
-                    sorting = scur.remove_excess_spikes(sorting, recording)
-                    sorting = sorting.save(folder=sorting_output_folder / "sorting")
-
+                    try:
+                        sorting = ss.run_sorter(
+                            sorter_name,
+                            recording=recording,
+                            output_folder=scratch_folder / session / filter_option / "no_di",
+                            n_jobs=n_jobs,
+                            verbose=True,
+                            singularity_image=singularity_image,
+                        )
+                        sorting = scur.remove_excess_spikes(sorting, recording)
+                        sorting = sorting.save(folder=sorting_output_folder / "sorting")
+                    except:
+                        print(f"\t\t\t{sorter_name} failed on original")
+                        sorting = None
                 if (sorting_output_folder / "sorting_di").is_dir() and not OVERWRITE:
                     print("\t\tLoading DI sorting")
                     sorting_di = si.load_extractor(sorting_output_folder / "sorting_di")
                 else:
                     print(f"\t\tSpike sorting DI with {sorter_name}")
-                    sorting_di = ss.run_sorter(
-                        sorter_name,
-                        recording=recording_di,
-                        output_folder=scratch_folder / session / filter_option / "di",
-                        n_jobs=n_jobs,
-                        verbose=True,
-                        singularity_image=singularity_image,
-                    )
-                    sorting_di = scur.remove_excess_spikes(sorting_di, recording_di)
-                    sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
-
+                    try:
+                        sorting_di = ss.run_sorter(
+                            sorter_name,
+                            recording=recording_di,
+                            output_folder=scratch_folder / session / filter_option / "di",
+                            n_jobs=n_jobs,
+                            verbose=True,
+                            singularity_image=singularity_image,
+                        )
+                        sorting_di = scur.remove_excess_spikes(sorting_di, recording_di)
+                        sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
+                    except:
+                        print(f"\t\t\t{sorter_name} failed on DI")
+                        sorting_di = None
+                
                 # compare to GT
+                perf_keys = ["precision", "false_discovery_rate", "miss_rate", 
+                             "num_gt", "num_sorter", "num_well_detected", "num_overmerged",
+                             "num_redundant", "num_false_positivenum_bad"]
                 print("\tRunning comparison")
-                cmp = sc.compare_sorter_to_ground_truth(sorting_gt, sorting, exhaustive_gt=True)
-                cmp_di = sc.compare_sorter_to_ground_truth(sorting_gt, sorting_di, exhaustive_gt=True)
+                if sorting is not None:
+                    cmp = sc.compare_sorter_to_ground_truth(sorting_gt, sorting, exhaustive_gt=True)
+                    perf_avg = cmp.get_performance(method="pooled_with_average")
+                    counts = cmp.count_units_categories()
+                    new_data = {
+                        "probe": probe,
+                        "session": session_name,
+                        "num_units": len(sorting.unit_ids),
+                        "filter_option": filter_option,
+                        "deepinterpolated": False,
+                    }
+                    new_data.update(perf_avg.to_dict())
+                    new_data.update(counts.to_dict())
+                else:
+                    new_data = {
+                        "probe": probe,
+                        "session": session_name,
+                        "num_units": np.nan,
+                        "filter_option": filter_option,
+                        "deepinterpolated": False,
+                    }
+                    for perf_key in perf_keys:
+                        new_data[perf_key] = np.nan
 
-                perf_avg = cmp.get_performance(method="pooled_with_average")
-                perf_avg_di = cmp_di.get_performance(method="pooled_with_average")
-                counts = cmp.count_units_categories()
-                counts_di = cmp_di.count_units_categories()
+                if sorting_di is not None:
+                    cmp_di = sc.compare_sorter_to_ground_truth(sorting_gt, sorting_di, exhaustive_gt=True)
+                    perf_avg_di = cmp_di.get_performance(method="pooled_with_average")
+                    counts_di = cmp_di.count_units_categories()
 
-                new_data = {
-                    "probe": probe,
-                    "session": session_name,
-                    "num_units": len(sorting.unit_ids),
-                    "filter_option": filter_option,
-                    "deepinterpolated": False,
-                }
-                new_data_di = new_data.copy()
-                new_data_di["deepinterpolated"] = True
-                new_data_di["num_units"] = len(sorting_di.unit_ids)
-
-                new_data.update(perf_avg.to_dict())
-                new_data.update(counts.to_dict())
-
-                new_data_di.update(perf_avg_di.to_dict())
-                new_data_di.update(counts_di.to_dict())
+                    new_data_di = {
+                        "probe": probe,
+                        "session": session_name,
+                        "num_units": len(sorting_di.unit_ids),
+                        "filter_option": filter_option,
+                        "deepinterpolated": True,
+                    }
+                    new_data_di.update(perf_avg_di.to_dict())
+                    new_data_di.update(counts_di.to_dict())
+                else:
+                    new_data_di = {
+                        "probe": probe,
+                        "session": session_name,
+                        "num_units": np.nan,
+                        "filter_option": filter_option,
+                        "deepinterpolated": True,
+                    }
+                    for perf_key in perf_keys:
+                        new_data[perf_key] = np.nan
 
                 new_df = pd.DataFrame([new_data])
                 new_df_di = pd.DataFrame([new_data_di])
@@ -187,20 +221,41 @@ if __name__ == "__main__":
                     session_level_results = pd.concat([session_level_results, new_df_session], ignore_index=True)
 
                 # by unit
-                perf_by_unit = cmp.get_performance(method="by_unit")
-                perf_columns = perf_by_unit.columns
-                perf_by_unit.loc[:, "probe"] = [probe] * len(perf_by_unit)
-                perf_by_unit.loc[:, "session"] = [session_name] * len(perf_by_unit)
-                perf_by_unit.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit)
-                perf_by_unit.loc[:, "deepinterpolated"] = [False] * len(perf_by_unit)
-                perf_by_unit.loc[:, "unit_id"] = sorting_gt.unit_ids
+                unit_perf_keys = ["accuracy", "recall", "precision", "false_discovery_rate", "miss_rate"]
+                if sorting is not None:
+                    perf_by_unit = cmp.get_performance(method="by_unit")
+                    perf_columns = perf_by_unit.columns
+                    perf_by_unit.loc[:, "probe"] = [probe] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "session"] = [session_name] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "deepinterpolated"] = [False] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "unit_id"] = sorting_gt.unit_ids
+                else:
+                    perf_by_unit = pd.DataFrame({"unit_id": sorting_gt.unit_ids})
+                    perf_by_unit.loc[:, "probe"] = [probe] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "session"] = [session_name] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "deepinterpolated"] = [False] * len(perf_by_unit)
+                    perf_by_unit.loc[:, "unit_id"] = sorting_gt.unit_ids
+                    for perf_key in unit_perf_keys:
+                        perf_by_unit.loc[:, perf_key] = np.nan
 
-                perf_by_unit_di = cmp_di.get_performance(method="by_unit")
-                perf_by_unit_di.loc[:, "probe"] = [probe] * len(perf_by_unit_di)
-                perf_by_unit_di.loc[:, "session"] = [session_name] * len(perf_by_unit_di)
-                perf_by_unit_di.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit_di)
-                perf_by_unit_di.loc[:, "deepinterpolated"] = [True] * len(perf_by_unit_di)
-                perf_by_unit_di.loc[:, "unit_id"] = sorting_gt.unit_ids
+                if sorting_di is not None:
+                    perf_by_unit_di = cmp_di.get_performance(method="by_unit")
+                    perf_by_unit_di.loc[:, "probe"] = [probe] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "session"] = [session_name] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "deepinterpolated"] = [True] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "unit_id"] = sorting_gt.unit_ids
+                else:
+                    perf_by_unit_di = pd.DataFrame({"unit_id": sorting_gt.unit_ids})
+                    perf_by_unit_di.loc[:, "probe"] = [probe] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "session"] = [session_name] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "filter_option"] = [filter_option] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "deepinterpolated"] = [True] * len(perf_by_unit_di)
+                    perf_by_unit_di.loc[:, "unit_id"] = sorting_gt.unit_ids
+                    for perf_key in unit_perf_keys:
+                        perf_by_unit_di.loc[:, perf_key] = np.nan
 
                 new_unit_df = pd.concat([perf_by_unit, perf_by_unit_di], ignore_index=True)
 

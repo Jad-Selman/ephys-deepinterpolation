@@ -134,138 +134,152 @@ if __name__ == "__main__":
                     sorting = si.load_extractor(sorting_output_folder / "sorting")
                 else:
                     print(f"\t\tSpike sorting NO DI with {sorter_name}")
-                    sorting = ss.run_sorter(
-                        sorter_name,
-                        recording=recording,
-                        output_folder=scratch_folder / session / filter_option / "no_di",
-                        n_jobs=n_jobs,
-                        verbose=True,
-                        singularity_image=singularity_image,
-                    )
-                    sorting = scur.remove_excess_spikes(sorting, recording)
-                    sorting = sorting.save(folder=sorting_output_folder / "sorting")
+                    try:
+                        sorting = ss.run_sorter(
+                            sorter_name,
+                            recording=recording,
+                            output_folder=scratch_folder / session / filter_option / "no_di",
+                            n_jobs=n_jobs,
+                            verbose=True,
+                            singularity_image=singularity_image,
+                        )
+                        sorting = scur.remove_excess_spikes(sorting, recording)
+                        sorting = sorting.save(folder=sorting_output_folder / "sorting")
+                    except:
+                        print(f"Error sorting {session} with {sorter_name} and {filter_option}")
+                        sorting = None
+                
 
                 if (sorting_output_folder / "sorting_di").is_dir() and not OVERWRITE:
                     print("\t\tLoading DI sorting")
                     sorting_di = si.load_extractor(sorting_output_folder / "sorting_di")
                 else:
                     print(f"\t\tSpike sorting DI with {sorter_name}")
-                    sorting_di = ss.run_sorter(
-                        sorter_name,
-                        recording=recording_di,
-                        output_folder=scratch_folder / session / filter_option / "di",
-                        n_jobs=n_jobs,
-                        verbose=True,
-                        singularity_image=singularity_image,
+                    try:
+                        sorting_di = ss.run_sorter(
+                            sorter_name,
+                            recording=recording_di,
+                            output_folder=scratch_folder / session / filter_option / "di",
+                            n_jobs=n_jobs,
+                            verbose=True,
+                            singularity_image=singularity_image,
+                        )
+                        sorting_di = scur.remove_excess_spikes(sorting_di, recording_di)
+                        sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
+                    except:
+                        print(f"Error sorting DI {session} with {sorter_name} and {filter_option}")
+                        sorting_di = None
+
+                if sorting is not None and sorting_di is not None:
+                    # compare outputs
+                    print("\t\tComparing sortings")
+                    comp = sc.compare_two_sorters(
+                        sorting1=sorting,
+                        sorting2=sorting_di,
+                        sorting1_name="no_di",
+                        sorting2_name="di",
+                        match_score=match_score,
                     )
-                    sorting_di = scur.remove_excess_spikes(sorting_di, recording_di)
-                    sorting_di = sorting_di.save(folder=sorting_output_folder / "sorting_di")
+                    matched_units = comp.get_matching()[0]
+                    matched_unit_ids = matched_units.index.values.astype(int)
+                    matched_unit_ids_di = matched_units.values.astype(int)
+                    matched_units_valid = matched_unit_ids_di != -1
+                    matched_unit_ids = matched_unit_ids[matched_units_valid]
+                    matched_unit_ids_di = matched_unit_ids_di[matched_units_valid]
+                    sorting_matched = sorting.select_units(unit_ids=matched_unit_ids)
+                    sorting_di_matched = sorting_di.select_units(unit_ids=matched_unit_ids_di)
+                else:
+                    sorting_matched = None
+                    sorting_di_matched = None
 
-                # compare outputs
-                print("\t\tComparing sortings")
-                comp = sc.compare_two_sorters(
-                    sorting1=sorting,
-                    sorting2=sorting_di,
-                    sorting1_name="no_di",
-                    sorting2_name="di",
-                    match_score=match_score,
-                )
-                matched_units = comp.get_matching()[0]
-                matched_unit_ids = matched_units.index.values.astype(int)
-                matched_unit_ids_di = matched_units.values.astype(int)
-                matched_units_valid = matched_unit_ids_di != -1
-                matched_unit_ids = matched_unit_ids[matched_units_valid]
-                matched_unit_ids_di = matched_unit_ids_di[matched_units_valid]
-                sorting_matched = sorting.select_units(unit_ids=matched_unit_ids)
-                sorting_di_matched = sorting_di.select_units(unit_ids=matched_unit_ids_di)
-
-                ## add entries to session-level results
                 new_row = {
                     "dataset": dataset_name,
                     "session": session_name,
                     "filter_option": filter_option,
                     "probe": probe,
-                    "num_units": len(sorting.unit_ids),
-                    "num_units_di": len(sorting_di.unit_ids),
-                    "num_match": len(sorting_matched.unit_ids),
-                    "sorting_path": str((sorting_output_folder / "sorting").relative_to(results_folder)),
-                    "sorting_path_di": str((sorting_output_folder / "sorting_di_").relative_to(results_folder)),
+                    "num_units": len(sorting.unit_ids) if sorting is not None else 0,
+                    "num_units_di": len(sorting_di.unit_ids) if sorting_di is not None else 0,
+                    "num_match": len(sorting_matched.unit_ids) if sorting_matched is not None else 0,
+                    "sorting_path": str((sorting_output_folder / "sorting").relative_to(results_folder)) if sorting is not None else None,
+                    "sorting_path_di": str((sorting_output_folder / "sorting_di_").relative_to(results_folder)) if sorting_di is not None else None,
                 }
-                session_level_results = pd.concat([session_level_results, pd.DataFrame([new_row])], ignore_index=True)
 
                 print(
                     f"\n\t\tNum units: {new_row['num_units']} - Num units DI: {new_row['num_units_di']} - Num match: {new_row['num_match']}"
                 )
 
-                # waveforms
-                waveforms_folder = results_folder / f"waveforms_{dataset_name}_{session_name}_{filter_option}"
-                waveforms_folder.mkdir(exist_ok=True, parents=True)
+                if sorting_matched is not None:
+                    # waveforms
+                    waveforms_folder = results_folder / f"waveforms_{dataset_name}_{session_name}_{filter_option}"
+                    waveforms_folder.mkdir(exist_ok=True, parents=True)
 
-                if (waveforms_folder / "waveforms").is_dir() and not OVERWRITE:
-                    print("\t\tLoad NO DI waveforms")
-                    we = si.load_waveforms(waveforms_folder / "waveforms")
-                else:
-                    print("\t\tCompute NO DI waveforms")
-                    we = si.extract_waveforms(
-                        recording,
-                        sorting_matched,
-                        folder=waveforms_folder / "waveforms",
-                        n_jobs=n_jobs,
-                        overwrite=True,
-                    )
+                    if (waveforms_folder / "waveforms").is_dir() and not OVERWRITE:
+                        print("\t\tLoad NO DI waveforms")
+                        we = si.load_waveforms(waveforms_folder / "waveforms")
+                    else:
+                        print("\t\tCompute NO DI waveforms")
+                        we = si.extract_waveforms(
+                            recording,
+                            sorting_matched,
+                            folder=waveforms_folder / "waveforms",
+                            n_jobs=n_jobs,
+                            overwrite=True,
+                        )
 
-                if (waveforms_folder / "waveforms_di").is_dir() and not OVERWRITE:
-                    print("\t\tLoad DI waveforms")
-                    we_di = si.load_waveforms(waveforms_folder / "waveforms_di")
-                else:
-                    print("\t\tCompute DI waveforms")
-                    we_di = si.extract_waveforms(
-                        recording_di,
-                        sorting_di_matched,
-                        folder=waveforms_folder / "waveforms_di",
-                        n_jobs=n_jobs,
-                        overwrite=True,
-                    )
+                    if (waveforms_folder / "waveforms_di").is_dir() and not OVERWRITE:
+                        print("\t\tLoad DI waveforms")
+                        we_di = si.load_waveforms(waveforms_folder / "waveforms_di")
+                    else:
+                        print("\t\tCompute DI waveforms")
+                        we_di = si.extract_waveforms(
+                            recording_di,
+                            sorting_di_matched,
+                            folder=waveforms_folder / "waveforms_di",
+                            n_jobs=n_jobs,
+                            overwrite=True,
+                        )
 
-                # compute metrics
-                if we.is_extension("quality_metrics") and not OVERWRITE:
-                    print("\t\tLoad NO DI metrics")
-                    qm = we.load_extension("quality_metrics").get_data()
-                else:
-                    print("\t\tCompute NO DI metrics")
-                    qm = sqm.compute_quality_metrics(we)
+                    # compute metrics
+                    if we.is_extension("quality_metrics") and not OVERWRITE:
+                        print("\t\tLoad NO DI metrics")
+                        qm = we.load_extension("quality_metrics").get_data()
+                    else:
+                        print("\t\tCompute NO DI metrics")
+                        qm = sqm.compute_quality_metrics(we)
 
-                if we_di.is_extension("quality_metrics") and not OVERWRITE:
-                    print("\t\tLoad DI metrics")
-                    qm_di = we_di.load_extension("quality_metrics").get_data()
-                else:
-                    print("\t\tCompute DI metrics")
-                    qm_di = sqm.compute_quality_metrics(we_di)
+                    if we_di.is_extension("quality_metrics") and not OVERWRITE:
+                        print("\t\tLoad DI metrics")
+                        qm_di = we_di.load_extension("quality_metrics").get_data()
+                    else:
+                        print("\t\tCompute DI metrics")
+                        qm_di = sqm.compute_quality_metrics(we_di)
 
-                ## add entries to unit-level results
-                if unit_level_results is None:
+                    ## add entries to unit-level results
+                    if unit_level_results is None:
+                        for metric in qm.columns:
+                            unit_level_results_columns.append(metric)
+                            unit_level_results_columns.append(f"{metric}_di")
+                        unit_level_results = pd.DataFrame(columns=unit_level_results_columns)
+
+                    new_rows = {
+                        "dataset": [dataset_name] * len(qm),
+                        "session": [session_name] * len(qm),
+                        "probe": [probe] * len(qm),
+                        "filter_option": [filter_option] * len(qm),
+                        "unit_id": we.unit_ids,
+                        "unit_id_di": we_di.unit_ids,
+                    }
+                    agreement_scores = []
+                    for i in range(len(we.unit_ids)):
+                        agreement_scores.append(comp.agreement_scores.at[we.unit_ids[i], we_di.unit_ids[i]])
+                    new_rows["agreement_score"] = agreement_scores
                     for metric in qm.columns:
-                        unit_level_results_columns.append(metric)
-                        unit_level_results_columns.append(f"{metric}_di")
-                    unit_level_results = pd.DataFrame(columns=unit_level_results_columns)
+                        new_rows[metric] = qm[metric].values
+                        new_rows[f"{metric}_di"] = qm_di[metric].values
+                    # append new entries
+                    unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
 
-                new_rows = {
-                    "dataset": [dataset_name] * len(qm),
-                    "session": [session_name] * len(qm),
-                    "probe": [probe] * len(qm),
-                    "filter_option": [filter_option] * len(qm),
-                    "unit_id": we.unit_ids,
-                    "unit_id_di": we_di.unit_ids,
-                }
-                agreement_scores = []
-                for i in range(len(we.unit_ids)):
-                    agreement_scores.append(comp.agreement_scores.at[we.unit_ids[i], we_di.unit_ids[i]])
-                new_rows["agreement_score"] = agreement_scores
-                for metric in qm.columns:
-                    new_rows[metric] = qm[metric].values
-                    new_rows[f"{metric}_di"] = qm_di[metric].values
-                # append new entries
-                unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
-
-            session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
-            unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
+            if session_level_results is None:
+                session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
+            if unit_level_results is None:
+                unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
