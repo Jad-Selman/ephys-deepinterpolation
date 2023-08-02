@@ -218,6 +218,9 @@ if __name__ == "__main__":
                         we = si.load_waveforms(waveforms_folder / "waveforms")
                     else:
                         print("\t\tCompute NO DI waveforms")
+                        if sorting_matched.sampling_frequency != recording.sampling_frequency:
+                            print("\t\tSetting sorting sampling frequency to match recording")
+                            sorting_matched._sampling_frequency = recording.sampling_frequency
                         we = si.extract_waveforms(
                             recording,
                             sorting_matched,
@@ -231,6 +234,9 @@ if __name__ == "__main__":
                         we_di = si.load_waveforms(waveforms_folder / "waveforms_di")
                     else:
                         print("\t\tCompute DI waveforms")
+                        if sorting_di_matched.sampling_frequency != recording.sampling_frequency:
+                            print("\t\tSetting sorting DI sampling frequency to match recording")
+                            sorting_di_matched._sampling_frequency = recording.sampling_frequency
                         we_di = si.extract_waveforms(
                             recording_di,
                             sorting_di_matched,
