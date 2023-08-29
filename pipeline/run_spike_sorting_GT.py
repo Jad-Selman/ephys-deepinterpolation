@@ -85,7 +85,6 @@ if __name__ == "__main__":
         processed_folder = data_subfolders[0]
 
     for probe, sessions in session_dict.items():
-
         print(f"Dataset {probe}")
         for session in sessions:
             print(f"\nAnalyzing session {session}\n")
@@ -156,11 +155,19 @@ if __name__ == "__main__":
                     except:
                         print(f"\t\t\t{sorter_name} failed on DI")
                         sorting_di = None
-                
+
                 # compare to GT
-                perf_keys = ["precision", "false_discovery_rate", "miss_rate", 
-                             "num_gt", "num_sorter", "num_well_detected", "num_overmerged",
-                             "num_redundant", "num_false_positivenum_bad"]
+                perf_keys = [
+                    "precision",
+                    "false_discovery_rate",
+                    "miss_rate",
+                    "num_gt",
+                    "num_sorter",
+                    "num_well_detected",
+                    "num_overmerged",
+                    "num_redundant",
+                    "num_false_positivenum_bad",
+                ]
                 print("\tRunning comparison")
                 if sorting is not None:
                     cmp = sc.compare_sorter_to_ground_truth(sorting_gt, sorting, exhaustive_gt=True)

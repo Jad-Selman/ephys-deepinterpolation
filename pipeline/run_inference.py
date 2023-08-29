@@ -176,7 +176,9 @@ if __name__ == "__main__":
 
                 recording_zscore = spre.zscore(recording_processed)
                 # This speeds things up a lot
-                recording_zscore_bin = recording_zscore.save(folder=scratch_folder / f"recording_zscored_{recording_name}")
+                recording_zscore_bin = recording_zscore.save(
+                    folder=scratch_folder / f"recording_zscored_{recording_name}"
+                )
 
                 # train model
                 model_folder = data_model_folder / f"model_{recording_name}"

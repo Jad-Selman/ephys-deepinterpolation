@@ -83,7 +83,6 @@ if __name__ == "__main__":
         processed_folder = data_subfolders[0]
 
     for probe, sessions in session_dict.items():
-
         print(f"Dataset {probe}")
         for session in sessions:
             print(f"\nAnalyzing session {session}\n")
@@ -147,7 +146,6 @@ if __name__ == "__main__":
                     except:
                         print(f"Error sorting {session} with {sorter_name} and {filter_option}")
                         sorting = None
-                
 
                 if (sorting_output_folder / "sorting_di").is_dir() and not OVERWRITE:
                     print("\t\tLoading DI sorting")
@@ -199,18 +197,21 @@ if __name__ == "__main__":
                     "num_units": len(sorting.unit_ids) if sorting is not None else 0,
                     "num_units_di": len(sorting_di.unit_ids) if sorting_di is not None else 0,
                     "num_match": len(sorting_matched.unit_ids) if sorting_matched is not None else 0,
-                    "sorting_path": str((sorting_output_folder / "sorting").relative_to(results_folder)) if sorting is not None else None,
-                    "sorting_path_di": str((sorting_output_folder / "sorting_di_").relative_to(results_folder)) if sorting_di is not None else None,
+                    "sorting_path": str((sorting_output_folder / "sorting").relative_to(results_folder))
+                    if sorting is not None
+                    else None,
+                    "sorting_path_di": str((sorting_output_folder / "sorting_di_").relative_to(results_folder))
+                    if sorting_di is not None
+                    else None,
                 }
 
                 print(
                     f"\n\t\tNum units: {new_row['num_units']} - Num units DI: {new_row['num_units_di']} - Num match: {new_row['num_match']}"
                 )
-                
+
                 if session_level_results is None:
                     session_level_results = pd.DataFrame(columns=session_level_results_columns)
                 session_level_results = pd.concat([session_level_results, pd.DataFrame([new_row])], ignore_index=True)
-
 
                 if sorting_matched is not None:
                     # waveforms
@@ -290,6 +291,8 @@ if __name__ == "__main__":
                     unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
 
             if session_level_results is not None:
-                session_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False)
+                session_level_results.to_csv(
+                    results_folder / f"{dataset_name}-{session_name}-sessions.csv", index=False
+                )
             if unit_level_results is not None:
                 unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
