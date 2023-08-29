@@ -89,19 +89,18 @@ if __name__ == "__main__":
             print(f"\nAnalyzing session {session}\n")
             dataset_name, session_name = session.split("/")
 
-            session_level_results = pd.DataFrame(
-                columns=[
-                    "dataset",
-                    "session",
-                    "probe",
-                    "filter_option",
-                    "num_units",
-                    "num_units_di",
-                    "sorting_path",
-                    "sorting_path_di",
-                    "num_match",
-                ]
-            )
+            session_level_results_columns = [
+                "dataset",
+                "session",
+                "probe",
+                "filter_option",
+                "num_units",
+                "num_units_di",
+                "sorting_path",
+                "sorting_path_di",
+                "num_match",
+            ]
+            session_level_results = None
 
             unit_level_results_columns = [
                 "dataset",
@@ -207,6 +206,11 @@ if __name__ == "__main__":
                 print(
                     f"\n\t\tNum units: {new_row['num_units']} - Num units DI: {new_row['num_units_di']} - Num match: {new_row['num_match']}"
                 )
+                
+                if session_level_results is None:
+                    session_level_results = pd.DataFrame(columns=session_level_results_columns)
+                session_level_results = pd.concat([session_level_results, pd.DataFrame([new_row])], ignore_index=True)
+
 
                 if sorting_matched is not None:
                     # waveforms

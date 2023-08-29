@@ -86,7 +86,7 @@ if __name__ == "__main__":
             DEBUG = False
 
     json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
-    print(f"Found {len(json_files)} JSON config")
+    print(f"Found {len(json_files)} JSON config: {json_files}")
     if len(json_files) > 0:
         session_dict = {}
         # each json file contains a session to run
