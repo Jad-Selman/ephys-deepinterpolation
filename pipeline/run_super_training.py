@@ -85,17 +85,20 @@ if __name__ == "__main__":
     print(session_dict)
 
     if DEBUG:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 0.2
-        TESTING_START_S = 10
-        TESTING_END_S = 10.05
-        STEPS_PER_EPOCH = 10
+        TRAINING_START_S = 10
+        TRAINING_END_S = None
+        TRAINING_DURATION_S = 1
+        TESTING_START_S = 0
+        TESTING_END_S = 10
+        TESTING_DURATION_S = 0.05
         OVERWRITE = True
     else:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 10
-        TESTING_START_S = 70
-        TESTING_END_S = 70.1
+        TRAINING_START_S = 10
+        TRAINING_END_S = None
+        TRAINING_DURATION_S = 600
+        TESTING_START_S = 0
+        TESTING_END_S = 10
+        TESTING_DURATION_S = 0.1
         OVERWRITE = False
 
     si.set_global_job_kwargs(**job_kwargs)
@@ -155,6 +158,9 @@ if __name__ == "__main__":
                 model_folder = results_folder / f"models_{probe}_{filter_option}" / f"iter{i}"
                 model_folder.parent.mkdir(parents=True, exist_ok=True)
 
+                if TRAINING_END_S is None:
+                    TRAINING_END_S = recording.get_total_duration()
+
                 # Use SI function
                 t_start_training = time.perf_counter()
                 if pretrained_model_path is not None:
@@ -166,8 +172,10 @@ if __name__ == "__main__":
                     existing_model_path=pretrained_model_path,
                     train_start_s=TRAINING_START_S,
                     train_end_s=TRAINING_END_S,
+                    train_duration_s=TRAINING_DURATION_S,
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
+                    test_duration_s=TESTING_DURATION_S,
                     verbose=False,
                     nb_gpus=1,
                     steps_per_epoch=STEPS_PER_EPOCH,

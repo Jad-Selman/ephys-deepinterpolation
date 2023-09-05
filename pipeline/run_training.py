@@ -107,16 +107,20 @@ if __name__ == "__main__":
     print(session_dict)
 
     if DEBUG:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 0.2
-        TESTING_START_S = 10
-        TESTING_END_S = 10.05
+        TRAINING_START_S = 10
+        TRAINING_END_S = None
+        TRAINING_DURATION_S = 1
+        TESTING_START_S = 0
+        TESTING_END_S = 10
+        TESTING_DURATION_S = 0.05
         OVERWRITE = True
     else:
-        TRAINING_START_S = 0
-        TRAINING_END_S = 20
-        TESTING_START_S = 70
-        TESTING_END_S = 70.1
+        TRAINING_START_S = 10
+        TRAINING_END_S = None
+        TRAINING_DURATION_S = 600
+        TESTING_START_S = 0
+        TESTING_END_S = 10
+        TESTING_DURATION_S = 0.1
         OVERWRITE = False
 
     si.set_global_job_kwargs(**job_kwargs)
@@ -148,6 +152,8 @@ if __name__ == "__main__":
                     end_frame=int(DEBUG_DURATION * recording.sampling_frequency),
                 )
             print(f"\t{recording}")
+            if TRAINING_END_S is None:
+                TRAINING_END_S = recording.get_total_duration()
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
@@ -185,8 +191,10 @@ if __name__ == "__main__":
                     model_name=model_name,
                     train_start_s=TRAINING_START_S,
                     train_end_s=TRAINING_END_S,
+                    train_duration_s=TRAINING_DURATION_S,
                     test_start_s=TESTING_START_S,
                     test_end_s=TESTING_END_S,
+                    test_duration_s=TESTING_DURATION_S,
                     verbose=False,
                     nb_gpus=nb_gpus,
                     steps_per_epoch=STEPS_PER_EPOCH,
