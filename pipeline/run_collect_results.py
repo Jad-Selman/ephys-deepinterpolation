@@ -1,0 +1,96 @@
+import warnings
+
+warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+#### IMPORTS #######
+import shutil
+
+
+from pathlib import Path
+import pandas as pd
+
+
+base_path = Path("..")
+
+data_folder = base_path / "data"
+scratch_folder = base_path / "scratch"
+results_folder = base_path / "results"
+
+
+if __name__ == "__main__":
+    # list all data entries
+    print("Data folder content:")
+    for p in data_folder.iterdir():
+        print(f"\t{p.name}")
+
+    # concatenate dataframes
+    df_session = None
+    df_units = None
+
+    probe_sortings_folders = [p for p in data_folder.iterdir() if p.name.startswith("sorting_") and p.is_dir()]
+
+    if len(probe_sortings_folders) > 0:
+        data_models_folder = data_folder
+        data_sortings_folder = data_folder
+    else:
+        data_model_subfolders = []
+        for p in data_folder.iterdir():
+            if p.is_dir() and len([pp for pp in p.iterdir() if "model_" in pp.name and pp.is_dir()]) > 0:
+                data_model_subfolders.append(p)
+        data_models_folder = data_model_subfolders[0]
+
+        data_sorting_subfolders = []
+        for p in data_folder.iterdir():
+            if p.is_dir() and len([pp for pp in p.iterdir() if "sorting_" in pp.name and pp.is_dir()]) > 0:
+                data_sorting_subfolders.append(p)
+        data_sortings_folder = data_sorting_subfolders[0]
+
+    session_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("sessions.csv")]
+    unit_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("units.csv")]
+
+    for session_csv in session_csvs:
+        if df_session is None:
+            df_session = pd.read_csv(session_csv)
+        else:
+            df_session = pd.concat([df_session, pd.read_csv(session_csv)])
+
+    for unit_csv in unit_csvs:
+        if df_units is None:
+            df_units = pd.read_csv(unit_csv)
+        else:
+            df_units = pd.concat([df_units, pd.read_csv(unit_csv)])
+
+    # save concatenated dataframes
+    df_session.to_csv(results_folder / "sessions.csv", index=False)
+    df_units.to_csv(results_folder / "units.csv", index=False)
+
+    # copy sortings to results folder
+    sortings_folders = [p for p in data_sortings_folder.iterdir() if "sorting_" in p.name and p.is_dir()]
+    sortings_output_base_folder = results_folder / "sortings"
+    sortings_output_base_folder.mkdir(exist_ok=True)
+
+    for sorting_folder in sortings_folders:
+        sorting_folder_split = sorting_folder.name.split("_")
+        dataset_name = sorting_folder_split[1]
+        session_name = "_".join(sorting_folder_split[2:-1])
+        filter_option = sorting_folder_split[-1]
+        sorting_output_folder = sortings_output_base_folder / dataset_name / session_name / filter_option
+        sorting_output_folder.mkdir(exist_ok=True, parents=True)
+        for sorting_subfolder in sorting_folder.iterdir():
+            shutil.copytree(sorting_subfolder, sorting_output_folder / sorting_subfolder.name)
+
+    # copy models to results folder
+    models_folders = [p for p in data_models_folder.iterdir() if "model_" in p.name and p.is_dir()]
+    models_output_base_folder = results_folder / "models"
+    models_output_base_folder.mkdir(exist_ok=True)
+
+    for model_folder in models_folders:
+        model_folder_split = model_folder.name.split("_")
+        dataset_name = model_folder_split[1]
+        session_name = "_".join(model_folder_split[2:-1])
+        filter_option = model_folder_split[-1]
+        model_output_folder = models_output_base_folder / dataset_name / session_name / filter_option
+        model_output_folder.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copytree(model_folder, model_output_folder)
