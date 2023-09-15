@@ -232,7 +232,7 @@ if __name__ == "__main__":
                 if sorting_matched is not None:
                     # waveforms for all units
                     waveforms_all_folder = (
-                        results_folder / f"waveforms_all_{dataset_name}_{session_name}_{filter_option}"
+                        scratch_folder / f"waveforms_all_{dataset_name}_{session_name}_{filter_option}"
                     )
                     waveforms_all_folder.mkdir(exist_ok=True, parents=True)
 
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
                         # finally, quality metrics
                         print("\t\tCompute DI metrics")
-                        qm_all = sqm.compute_quality_metrics(we_all)
+                        qm_all = sqm.compute_quality_metrics(we_all, n_jobs=1)
 
                     if (waveforms_all_folder / "waveforms_di").is_dir() and not OVERWRITE:
                         print("\t\tLoad DI waveforms all")
@@ -294,10 +294,10 @@ if __name__ == "__main__":
 
                         # finally, quality metrics
                         print("\t\tCompute DI metrics")
-                        qm_all_di = sqm.compute_quality_metrics(we_all_di)
+                        qm_all_di = sqm.compute_quality_metrics(we_all_di, n_jobs=1)
 
                     waveforms_matched_folder = (
-                        results_folder / f"waveforms_matched_{dataset_name}_{session_name}_{filter_option}"
+                        scratch_folder / f"waveforms_matched_{dataset_name}_{session_name}_{filter_option}"
                     )
                     waveforms_matched_folder.mkdir(exist_ok=True, parents=True)
 
