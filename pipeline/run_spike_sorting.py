@@ -308,7 +308,7 @@ if __name__ == "__main__":
                     else:
                         print("\t\tSelect NO DI waveforms matched")
                         we_matched = we_all.select_units(
-                            unit_ids=matched_unit_ids, folder=waveforms_matched_folder / "waveforms"
+                            unit_ids=matched_unit_ids, new_folder=waveforms_matched_folder / "waveforms"
                         )
                         qm_matched = we_matched.load_extension("quality_metrics").get_data()
 
@@ -319,7 +319,7 @@ if __name__ == "__main__":
                     else:
                         print("\t\tSelect DI waveforms matched")
                         we_matched_di = we_all_di.select_units(
-                            unit_ids=matched_unit_ids_di, folder=waveforms_matched_folder / "waveforms_di"
+                            unit_ids=matched_unit_ids_di, new_folder=waveforms_matched_folder / "waveforms_di"
                         )
                         qm_matched_di = we_matched_di.load_extension("quality_metrics").get_data()
 
