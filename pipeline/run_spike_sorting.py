@@ -271,12 +271,12 @@ if __name__ == "__main__":
                         we_all_di = si.load_waveforms(waveforms_all_folder / "waveforms_di")
                     else:
                         print("\t\tCompute DI waveforms all")
-                        if sorting_di_matched.sampling_frequency != recording.sampling_frequency:
+                        if sorting_di.sampling_frequency != recording.sampling_frequency:
                             print("\t\tSetting sorting DI sampling frequency to match recording")
-                            sorting_di_matched._sampling_frequency = recording.sampling_frequency
+                            sorting_di._sampling_frequency = recording.sampling_frequency
                         we_all_di = si.extract_waveforms(
                             recording_di,
-                            sorting_di_matched,
+                            sorting_di,
                             folder=waveforms_all_folder / "waveforms_di",
                             n_jobs=n_jobs,
                             overwrite=True,
@@ -380,7 +380,7 @@ if __name__ == "__main__":
                         new_rows[f"{metric}_di"] = qm_matched_di[metric].values
                     # append new entries
                     matched_unit_level_results = pd.concat(
-                        [unit_level_results, pd.DataFrame(new_matched_rows)], ignore_index=True
+                        [matched_unit_level_results, pd.DataFrame(new_matched_rows)], ignore_index=True
                     )
 
             if session_level_results is not None:
