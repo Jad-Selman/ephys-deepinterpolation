@@ -28,6 +28,7 @@ if __name__ == "__main__":
     # concatenate dataframes
     df_session = None
     df_units = None
+    df_matched_units = None
 
     probe_sortings_folders = [p for p in data_folder.iterdir() if p.name.startswith("sorting_") and p.is_dir()]
 
@@ -48,7 +49,8 @@ if __name__ == "__main__":
         data_sortings_folder = data_sorting_subfolders[0]
 
     session_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("sessions.csv")]
-    unit_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("units.csv")]
+    unit_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("units.csv") and "matched" not in p.name]
+    matched_unit_csvs = [p for p in data_sortings_folder.iterdir() if p.name.endswith("matched-units.csv")]
 
     for session_csv in session_csvs:
         if df_session is None:
@@ -62,9 +64,16 @@ if __name__ == "__main__":
         else:
             df_units = pd.concat([df_units, pd.read_csv(unit_csv)])
 
+    for matched_unit_csv in matched_unit_csvs:
+        if df_matched_units is None:
+            df_matched_units = pd.read_csv(matched_unit_csv)
+        else:
+            df_matched_units = pd.concat([df_matched_units, pd.read_csv(matched_unit_csv)])
+
     # save concatenated dataframes
     df_session.to_csv(results_folder / "sessions.csv", index=False)
     df_units.to_csv(results_folder / "units.csv", index=False)
+    df_matched_units.to_csv(results_folder / "matched-units.csv", index=False)
 
     # copy sortings to results folder
     sortings_folders = [p for p in data_sortings_folder.iterdir() if "sorting_" in p.name and p.is_dir()]

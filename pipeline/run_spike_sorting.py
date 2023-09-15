@@ -15,6 +15,7 @@ import spikeinterface as si
 import spikeinterface.sorters as ss
 import spikeinterface.curation as scur
 import spikeinterface.comparison as sc
+import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
 
 
@@ -39,6 +40,11 @@ FILTER_OPTIONS = ["bp", "hp"]  # "hp", "bp", "no"
 sorter_name = "pykilosort"
 singularity_image = False
 match_score = 0.7
+
+sparsity_kwargs = dict(
+    method="radius",
+    radius_um=200,
+)
 
 
 if __name__ == "__main__":
@@ -107,10 +113,20 @@ if __name__ == "__main__":
                 "probe",
                 "filter_option",
                 "unit_id",
+                "deepinterpolated",
+            ]
+            unit_level_results = None
+
+            matched_unit_level_results_columns = [
+                "dataset",
+                "session",
+                "probe",
+                "filter_option",
+                "unit_id",
                 "unit_id_di",
                 "agreement_score",
             ]
-            unit_level_results = None
+            matched_unit_level_results = None
 
             for filter_option in FILTER_OPTIONS:
                 print(f"\tFilter option: {filter_option}")
@@ -214,81 +230,158 @@ if __name__ == "__main__":
                 session_level_results = pd.concat([session_level_results, pd.DataFrame([new_row])], ignore_index=True)
 
                 if sorting_matched is not None:
-                    # waveforms
-                    waveforms_folder = results_folder / f"waveforms_{dataset_name}_{session_name}_{filter_option}"
-                    waveforms_folder.mkdir(exist_ok=True, parents=True)
+                    # waveforms for all units
+                    waveforms_all_folder = (
+                        results_folder / f"waveforms_all_{dataset_name}_{session_name}_{filter_option}"
+                    )
+                    waveforms_all_folder.mkdir(exist_ok=True, parents=True)
 
-                    if (waveforms_folder / "waveforms").is_dir() and not OVERWRITE:
-                        print("\t\tLoad NO DI waveforms")
-                        we = si.load_waveforms(waveforms_folder / "waveforms")
+                    if (waveforms_all_folder / "waveforms").is_dir() and not OVERWRITE:
+                        print("\t\tLoad NO DI waveforms all")
+                        we_all = si.load_waveforms(waveforms_all_folder / "waveforms")
                     else:
-                        print("\t\tCompute NO DI waveforms")
-                        if sorting_matched.sampling_frequency != recording.sampling_frequency:
+                        print("\t\tCompute NO DI waveforms all")
+                        if sorting.sampling_frequency != recording.sampling_frequency:
                             print("\t\tSetting sorting sampling frequency to match recording")
-                            sorting_matched._sampling_frequency = recording.sampling_frequency
-                        we = si.extract_waveforms(
+                            sorting._sampling_frequency = recording.sampling_frequency
+                        we_all = si.extract_waveforms(
                             recording,
-                            sorting_matched,
-                            folder=waveforms_folder / "waveforms",
+                            sorting,
+                            folder=waveforms_all_folder / "waveforms",
                             n_jobs=n_jobs,
                             overwrite=True,
+                            sparse=True,
+                            **sparsity_kwargs,
                         )
+                        print("\t\tCompute NO DI spike amplitudes")
+                        _ = spost.compute_spike_amplitudes(we_all)
+                        print("\t\tCompute NO DI spike locations")
+                        _ = spost.compute_spike_locations(we_all)
+                        print("\t\tCompute NO DI PCA scores")
+                        _ = spost.compute_principal_components(we_all)
+                        print("\t\tCompute NO DI template metrics")
+                        _ = spost.compute_template_metrics(we_all)
 
-                    if (waveforms_folder / "waveforms_di").is_dir() and not OVERWRITE:
-                        print("\t\tLoad DI waveforms")
-                        we_di = si.load_waveforms(waveforms_folder / "waveforms_di")
+                        # finally, quality metrics
+                        print("\t\tCompute DI metrics")
+                        qm_all = sqm.compute_quality_metrics(we_all)
+
+                    if (waveforms_all_folder / "waveforms_di").is_dir() and not OVERWRITE:
+                        print("\t\tLoad DI waveforms all")
+                        we_all_di = si.load_waveforms(waveforms_all_folder / "waveforms_di")
                     else:
-                        print("\t\tCompute DI waveforms")
+                        print("\t\tCompute DI waveforms all")
                         if sorting_di_matched.sampling_frequency != recording.sampling_frequency:
                             print("\t\tSetting sorting DI sampling frequency to match recording")
                             sorting_di_matched._sampling_frequency = recording.sampling_frequency
-                        we_di = si.extract_waveforms(
+                        we_all_di = si.extract_waveforms(
                             recording_di,
                             sorting_di_matched,
-                            folder=waveforms_folder / "waveforms_di",
+                            folder=waveforms_all_folder / "waveforms_di",
                             n_jobs=n_jobs,
                             overwrite=True,
+                            sparse=True,
+                            **sparsity_kwargs,
                         )
+                        print("\t\tCompute DI spike amplitudes")
+                        _ = spost.compute_spike_amplitudes(we_all_di)
+                        print("\t\tCompute DI spike locations")
+                        _ = spost.compute_spike_locations(we_all_di)
+                        print("\t\tCompute DI PCA scores")
+                        _ = spost.compute_principal_components(we_all_di)
+                        print("\t\tCompute DI template metrics")
+                        _ = spost.compute_template_metrics(we_all_di)
 
-                    # compute metrics
-                    if we.is_extension("quality_metrics") and not OVERWRITE:
-                        print("\t\tLoad NO DI metrics")
-                        qm = we.load_extension("quality_metrics").get_data()
-                    else:
-                        print("\t\tCompute NO DI metrics")
-                        qm = sqm.compute_quality_metrics(we)
-
-                    if we_di.is_extension("quality_metrics") and not OVERWRITE:
-                        print("\t\tLoad DI metrics")
-                        qm_di = we_di.load_extension("quality_metrics").get_data()
-                    else:
+                        # finally, quality metrics
                         print("\t\tCompute DI metrics")
-                        qm_di = sqm.compute_quality_metrics(we_di)
+                        qm_all_di = sqm.compute_quality_metrics(we_all_di)
+
+                    waveforms_matched_folder = (
+                        results_folder / f"waveforms_matched_{dataset_name}_{session_name}_{filter_option}"
+                    )
+                    waveforms_matched_folder.mkdir(exist_ok=True, parents=True)
+
+                    if (waveforms_matched_folder / "waveforms").is_dir() and not OVERWRITE:
+                        print("\t\tLoad NO DI waveforms matched")
+                        we_matched = si.load_waveforms(waveforms_matched_folder / "waveforms")
+                        qm_matched = we_matched.load_extension("quality_metrics").get_data()
+                    else:
+                        print("\t\tSelect NO DI waveforms matched")
+                        we_matched = we_all.select_units(
+                            unit_ids=matched_unit_ids, folder=waveforms_matched_folder / "waveforms"
+                        )
+                        qm_matched = we_matched.load_extension("quality_metrics").get_data()
+
+                    if (waveforms_matched_folder / "waveforms_di").is_dir() and not OVERWRITE:
+                        print("\t\tLoad DI waveforms matched")
+                        we_matched_di = si.load_waveforms(waveforms_matched_folder / "waveforms_di")
+                        qm_matched_di = we_matched_di.load_extension("quality_metrics").get_data()
+                    else:
+                        print("\t\tSelect DI waveforms matched")
+                        we_matched_di = we_all_di.select_units(
+                            unit_ids=matched_unit_ids_di, folder=waveforms_matched_folder / "waveforms_di"
+                        )
+                        qm_matched_di = we_matched_di.load_extension("quality_metrics").get_data()
 
                     ## add entries to unit-level results
                     if unit_level_results is None:
-                        for metric in qm.columns:
+                        for metric in qm_all.columns:
                             unit_level_results_columns.append(metric)
-                            unit_level_results_columns.append(f"{metric}_di")
                         unit_level_results = pd.DataFrame(columns=unit_level_results_columns)
 
                     new_rows = {
-                        "dataset": [dataset_name] * len(qm),
-                        "session": [session_name] * len(qm),
-                        "probe": [probe] * len(qm),
-                        "filter_option": [filter_option] * len(qm),
-                        "unit_id": we.unit_ids,
-                        "unit_id_di": we_di.unit_ids,
+                        "dataset": [dataset_name] * len(qm_all),
+                        "session": [session_name] * len(qm_all),
+                        "probe": [probe] * len(qm_all),
+                        "filter_option": [filter_option] * len(qm_all),
+                        "unit_id": we_all.unit_ids,
+                        "deepinterpolated": [False] * len(qm_all),
                     }
-                    agreement_scores = []
-                    for i in range(len(we.unit_ids)):
-                        agreement_scores.append(comp.agreement_scores.at[we.unit_ids[i], we_di.unit_ids[i]])
-                    new_rows["agreement_score"] = agreement_scores
-                    for metric in qm.columns:
-                        new_rows[metric] = qm[metric].values
-                        new_rows[f"{metric}_di"] = qm_di[metric].values
+                    new_rows_di = {
+                        "dataset": [dataset_name] * len(qm_all_di),
+                        "session": [session_name] * len(qm_all_di),
+                        "probe": [probe] * len(qm_all_di),
+                        "filter_option": [filter_option] * len(qm_all_di),
+                        "unit_id": we_all_di.unit_ids,
+                        "deepinterpolated": [True] * len(qm_all_di),
+                    }
+                    for metric in qm_all.columns:
+                        new_rows[metric] = qm_all[metric].values
+                        new_rows_di[metric] = qm_all_di[metric].values
                     # append new entries
-                    unit_level_results = pd.concat([unit_level_results, pd.DataFrame(new_rows)], ignore_index=True)
+                    unit_level_results = pd.concat(
+                        [unit_level_results, pd.DataFrame(new_rows), pd.DataFrame(new_rows_di)], ignore_index=True
+                    )
+
+                    ## add entries to matched unit-level results
+                    if matched_unit_level_results is None:
+                        for metric in qm_matched.columns:
+                            matched_unit_level_results_columns.append(metric)
+                            matched_unit_level_results_columns.append(f"{metric}_di")
+                        matched_unit_level_results = pd.DataFrame(columns=matched_unit_level_results)
+
+                    new_matched_rows = {
+                        "dataset": [dataset_name] * len(qm_matched),
+                        "session": [session_name] * len(qm_matched),
+                        "probe": [probe] * len(qm_matched),
+                        "filter_option": [filter_option] * len(qm_matched),
+                        "unit_id": we_matched.unit_ids,
+                        "unit_id_di": we_matched_di.unit_ids,
+                    }
+
+                    agreement_scores = []
+                    for i in range(len(we_matched.unit_ids)):
+                        agreement_scores.append(
+                            comp.agreement_scores.at[we_matched.unit_ids[i], we_matched_di.unit_ids[i]]
+                        )
+                    new_matched_rows["agreement_score"] = agreement_scores
+                    for metric in qm_matched.columns:
+                        new_rows[metric] = qm_matched[metric].values
+                        new_rows[f"{metric}_di"] = qm_matched_di[metric].values
+                    # append new entries
+                    matched_unit_level_results = pd.concat(
+                        [unit_level_results, pd.DataFrame(new_matched_rows)], ignore_index=True
+                    )
 
             if session_level_results is not None:
                 session_level_results.to_csv(
@@ -296,3 +389,7 @@ if __name__ == "__main__":
                 )
             if unit_level_results is not None:
                 unit_level_results.to_csv(results_folder / f"{dataset_name}-{session_name}-units.csv", index=False)
+            if matched_unit_level_results is not None:
+                matched_unit_level_results.to_csv(
+                    results_folder / f"{dataset_name}-{session_name}-matched-units.csv", index=False
+                )
