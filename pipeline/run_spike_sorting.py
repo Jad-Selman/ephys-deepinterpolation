@@ -247,14 +247,23 @@ if __name__ == "__main__":
                         if sorting.sampling_frequency != recording.sampling_frequency:
                             print("\t\tSetting sorting sampling frequency to match recording")
                             sorting._sampling_frequency = recording.sampling_frequency
+                        # first full, then sparse
+                        we_dense = si.extract_waveforms(
+                            recording,
+                            sorting,
+                            folder=waveforms_all_folder / "waveforms_dense",
+                            n_jobs=n_jobs,
+                            overwrite=True,
+                            max_spikes_per_unit=100
+                        )
+                        sparsity = si.compute_sparsity(we_dense, **sparsity_kwargs)
                         we_all = si.extract_waveforms(
                             recording,
                             sorting,
-                            folder=waveforms_all_folder / "waveforms",
+                            folder=waveforms_all_folder / "waveforms_all",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            sparse=True,
-                            **sparsity_kwargs,
+                            sparsity=sparsity
                         )
                         print("\t\tCompute NO DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all)
@@ -277,15 +286,25 @@ if __name__ == "__main__":
                         if sorting_di.sampling_frequency != recording.sampling_frequency:
                             print("\t\tSetting sorting DI sampling frequency to match recording")
                             sorting_di._sampling_frequency = recording.sampling_frequency
+                        # first full, then sparse
+                        we_dense_di = si.extract_waveforms(
+                            recording_di,
+                            sorting_di,
+                            folder=waveforms_all_folder / "waveforms_dense_di",
+                            n_jobs=n_jobs,
+                            overwrite=True,
+                            max_spikes_per_unit=100
+                        )
+                        sparsity_di = si.compute_sparsity(we_dense_di, **sparsity_kwargs)
                         we_all_di = si.extract_waveforms(
                             recording_di,
                             sorting_di,
-                            folder=waveforms_all_folder / "waveforms_di",
+                            folder=waveforms_all_folder / "waveforms_all_di",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            sparse=True,
-                            **sparsity_kwargs,
+                            sparsity=sparsity
                         )
+
                         print("\t\tCompute DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all_di)
                         print("\t\tCompute DI spike locations")
