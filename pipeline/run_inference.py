@@ -121,8 +121,8 @@ if __name__ == "__main__":
                 session in all_sessions[probe]
             ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
             session_dict[probe].append(session)
-            if "filter_options" in config:
-                filter_options = [config["filter_options"]]
+            if "filter_option" in config:
+                filter_options = [config["filter_option"]]
             else:
                 filter_options = FILTER_OPTIONS
     elif len(json_files) > 1:

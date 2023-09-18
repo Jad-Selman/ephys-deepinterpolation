@@ -67,7 +67,7 @@ def generate_job_config_list(output_folder, split_probes=True, split_filters=Tru
 
             if split_filters:
                 for filter_option in FILTER_OPTIONS:
-                    d["filter_options"] = filter_option
+                    d["filter_option"] = filter_option
                     with open(probe_folder / f"job{i}.json", "w") as f:
                         json.dump(d, f)
                     i += 1
