@@ -92,15 +92,19 @@ if __name__ == "__main__":
         # each json file contains a session to run
         for json_file in json_files:
             with open(json_file, "r") as f:
-                d = json.load(f)
-                probe = d["probe"]
+                config = json.load(f)
+                probe = config["probe"]
                 if probe not in session_dict:
                     session_dict[probe] = []
-                session = d["session"]
+                session = config["session"]
                 assert (
                     session in all_sessions[probe]
                 ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
                 session_dict[probe].append(session)
+                if "filter_options" in config:
+                    filter_options = [config["filter_options"]]
+                else:
+                    filter_options = FILTER_OPTIONS
     else:
         session_dict = all_sessions
 
@@ -155,7 +159,7 @@ if __name__ == "__main__":
             if TRAINING_END_S is None:
                 TRAINING_END_S = recording.get_total_duration()
 
-            for filter_option in FILTER_OPTIONS:
+            for filter_option in filter_options:
                 print(f"\tFilter option: {filter_option}")
                 recording_name = f"{dataset_name}_{session_name}_{filter_option}"
                 # train DI models

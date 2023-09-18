@@ -41,8 +41,10 @@ all_sessions_sim = {
     ],
 }
 
+FILTER_OPTIONS = ["hp", "bp"]
 
-def generate_job_config_list(output_folder, split_probes=True, dataset="exp"):
+
+def generate_job_config_list(output_folder, split_probes=True, split_filters=True, dataset="exp"):
     output_folder = Path(output_folder)
     output_folder.mkdir(exist_ok=True, parents=True)
 

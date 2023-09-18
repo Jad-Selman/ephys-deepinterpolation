@@ -7,6 +7,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 #### IMPORTS #######
 import sys
 import json
+import shutil
 from pathlib import Path
 import pandas as pd
 
@@ -26,7 +27,7 @@ from sessions import all_sessions_exp as all_sessions
 
 n_jobs = 16
 
-job_kwargs = dict(n_jobs=n_jobs, progress_bar=True, chunk_duration="1s")
+job_kwargs = dict(n_jobs=n_jobs, progress_bar=False, chunk_duration="1s")
 
 data_folder = base_path / "data"
 scratch_folder = base_path / "scratch"
@@ -46,6 +47,22 @@ sparsity_kwargs = dict(
     radius_um=200,
 )
 
+# skip NN because extremely slow
+qm_metric_names = [
+    "num_spikes",
+    "firing_rate",
+    "presence_ratio",
+    "snr",
+    "isi_violation",
+    "rp_violation",
+    "sliding_rp_violation",
+    "amplitude_cutoff",
+    "drift",
+    "isolation_distance",
+    "l_ratio",
+    "d_prime",
+]
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
@@ -63,15 +80,19 @@ if __name__ == "__main__":
         # each json file contains a session to run
         for json_file in json_files:
             with open(json_file, "r") as f:
-                d = json.load(f)
-                probe = d["probe"]
+                config = json.load(f)
+                probe = config["probe"]
                 if probe not in session_dict:
                     session_dict[probe] = []
-                session = d["session"]
+                session = config["session"]
                 assert (
                     session in all_sessions[probe]
                 ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
                 session_dict[probe].append(session)
+                if "filter_options" in config:
+                    filter_options = [config["filter_options"]]
+                else:
+                    filter_options = FILTER_OPTIONS
     else:
         session_dict = all_sessions
 
@@ -131,7 +152,7 @@ if __name__ == "__main__":
             ]
             matched_unit_level_results = None
 
-            for filter_option in FILTER_OPTIONS:
+            for filter_option in filter_options:
                 print(f"\tFilter option: {filter_option}")
 
                 # load recordings
@@ -254,7 +275,7 @@ if __name__ == "__main__":
                             folder=waveforms_all_folder / "waveforms_dense",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            max_spikes_per_unit=100
+                            max_spikes_per_unit=100,
                         )
                         sparsity = si.compute_sparsity(we_dense, **sparsity_kwargs)
                         we_all = si.extract_waveforms(
@@ -263,20 +284,23 @@ if __name__ == "__main__":
                             folder=waveforms_all_folder / "waveforms_all",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            sparsity=sparsity
+                            sparsity=sparsity,
                         )
+                        # remove dense folder
+                        shutil.rmtree(waveforms_all_folder / "waveforms_dense")
+
                         print("\t\tCompute NO DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all)
                         print("\t\tCompute NO DI spike locations")
                         _ = spost.compute_spike_locations(we_all)
                         print("\t\tCompute NO DI PCA scores")
                         _ = spost.compute_principal_components(we_all)
-                        print("\t\tCompute NO DI template metrics")
-                        _ = spost.compute_template_metrics(we_all)
 
-                        # finally, quality metrics
-                        print("\t\tCompute DI metrics")
-                        qm_all = sqm.compute_quality_metrics(we_all, n_jobs=1)
+                        # finally, template and quality metrics
+                        print("\t\tCompute NO DI template metrics")
+                        tm_all = spost.compute_template_metrics(we_all)
+                        print("\t\tCompute NO DI metrics")
+                        qm_all = sqm.compute_quality_metrics(we_all, n_jobs=1, metric_names=qm_metric_names)
 
                     if (waveforms_all_folder / "waveforms_di").is_dir() and not OVERWRITE:
                         print("\t\tLoad DI waveforms all")
@@ -293,7 +317,7 @@ if __name__ == "__main__":
                             folder=waveforms_all_folder / "waveforms_dense_di",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            max_spikes_per_unit=100
+                            max_spikes_per_unit=100,
                         )
                         sparsity_di = si.compute_sparsity(we_dense_di, **sparsity_kwargs)
                         we_all_di = si.extract_waveforms(
@@ -302,8 +326,10 @@ if __name__ == "__main__":
                             folder=waveforms_all_folder / "waveforms_all_di",
                             n_jobs=n_jobs,
                             overwrite=True,
-                            sparsity=sparsity
+                            sparsity=sparsity_di,
                         )
+                        # remove dense folder
+                        shutil.rmtree(waveforms_all_folder / "waveforms_dense_di")
 
                         print("\t\tCompute DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all_di)
@@ -311,12 +337,13 @@ if __name__ == "__main__":
                         _ = spost.compute_spike_locations(we_all_di)
                         print("\t\tCompute DI PCA scores")
                         _ = spost.compute_principal_components(we_all_di)
-                        print("\t\tCompute DI template metrics")
-                        _ = spost.compute_template_metrics(we_all_di)
 
-                        # finally, quality metrics
+                        # finally, template and quality metrics
+                        print("\t\tCompute DI template metrics")
+                        tm_all_di = spost.compute_template_metrics(we_all_di)
+
                         print("\t\tCompute DI metrics")
-                        qm_all_di = sqm.compute_quality_metrics(we_all_di, n_jobs=1)
+                        qm_all_di = sqm.compute_quality_metrics(we_all_di, n_jobs=1, metric_names=qm_metric_names)
 
                     waveforms_matched_folder = (
                         scratch_folder / f"waveforms_matched_{dataset_name}_{session_name}_{filter_option}"
@@ -327,27 +354,33 @@ if __name__ == "__main__":
                         print("\t\tLoad NO DI waveforms matched")
                         we_matched = si.load_waveforms(waveforms_matched_folder / "waveforms")
                         qm_matched = we_matched.load_extension("quality_metrics").get_data()
+                        tm_matched = we_matched.load_extension("template_metrics").get_data()
                     else:
                         print("\t\tSelect NO DI waveforms matched")
                         we_matched = we_all.select_units(
                             unit_ids=matched_unit_ids, new_folder=waveforms_matched_folder / "waveforms"
                         )
                         qm_matched = we_matched.load_extension("quality_metrics").get_data()
+                        tm_matched = we_matched.load_extension("template_metrics").get_data()
 
                     if (waveforms_matched_folder / "waveforms_di").is_dir() and not OVERWRITE:
                         print("\t\tLoad DI waveforms matched")
                         we_matched_di = si.load_waveforms(waveforms_matched_folder / "waveforms_di")
                         qm_matched_di = we_matched_di.load_extension("quality_metrics").get_data()
+                        tm_matched_di = we_matched_di.load_extension("template_metrics").get_data()
                     else:
                         print("\t\tSelect DI waveforms matched")
                         we_matched_di = we_all_di.select_units(
                             unit_ids=matched_unit_ids_di, new_folder=waveforms_matched_folder / "waveforms_di"
                         )
                         qm_matched_di = we_matched_di.load_extension("quality_metrics").get_data()
+                        tm_matched_di = we_matched_di.load_extension("template_metrics").get_data()
 
                     ## add entries to unit-level results
                     if unit_level_results is None:
                         for metric in qm_all.columns:
+                            unit_level_results_columns.append(metric)
+                        for metric in tm_all.columns:
                             unit_level_results_columns.append(metric)
                         unit_level_results = pd.DataFrame(columns=unit_level_results_columns)
 
@@ -370,6 +403,9 @@ if __name__ == "__main__":
                     for metric in qm_all.columns:
                         new_rows[metric] = qm_all[metric].values
                         new_rows_di[metric] = qm_all_di[metric].values
+                    for metric in tm_all.columns:
+                        new_rows[metric] = tm_all[metric].values
+                        new_rows_di[metric] = tm_all_di[metric].values
                     # append new entries
                     unit_level_results = pd.concat(
                         [unit_level_results, pd.DataFrame(new_rows), pd.DataFrame(new_rows_di)], ignore_index=True
@@ -378,6 +414,9 @@ if __name__ == "__main__":
                     ## add entries to matched unit-level results
                     if matched_unit_level_results is None:
                         for metric in qm_matched.columns:
+                            matched_unit_level_results_columns.append(metric)
+                            matched_unit_level_results_columns.append(f"{metric}_di")
+                        for metric in tm_matched.columns:
                             matched_unit_level_results_columns.append(metric)
                             matched_unit_level_results_columns.append(f"{metric}_di")
                         matched_unit_level_results = pd.DataFrame(columns=matched_unit_level_results)
@@ -400,6 +439,9 @@ if __name__ == "__main__":
                     for metric in qm_matched.columns:
                         new_rows[metric] = qm_matched[metric].values
                         new_rows[f"{metric}_di"] = qm_matched_di[metric].values
+                    for metric in tm_matched.columns:
+                        new_rows[metric] = tm_matched[metric].values
+                        new_rows[f"{metric}_di"] = tm_matched_di[metric].values
                     # append new entries
                     matched_unit_level_results = pd.concat(
                         [matched_unit_level_results, pd.DataFrame(new_matched_rows)], ignore_index=True

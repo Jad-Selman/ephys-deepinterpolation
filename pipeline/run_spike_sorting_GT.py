@@ -62,12 +62,16 @@ if __name__ == "__main__":
         # each json file contains a session to run
         for json_file in json_files:
             with open(json_file, "r") as f:
-                d = json.load(f)
-                probe = d["probe"]
+                config = json.load(f)
+                probe = config["probe"]
                 if probe not in session_dict:
                     session_dict[probe] = []
-                session = d["session"]
+                session = config["session"]
                 session_dict[probe].append(session)
+                if "filter_options" in config:
+                    filter_options = [config["filter_options"]]
+                else:
+                    filter_options = FILTER_OPTIONS
     else:
         session_dict = all_sessions
 
@@ -96,7 +100,7 @@ if __name__ == "__main__":
             session_level_results = None
             unit_level_results = None
 
-            for filter_option in FILTER_OPTIONS:
+            for filter_option in filter_options:
                 print(f"\tFilter option: {filter_option}")
 
                 # load recordings
