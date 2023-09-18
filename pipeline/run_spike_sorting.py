@@ -258,8 +258,11 @@ if __name__ == "__main__":
 
                 if sorting_matched is not None:
                     # waveforms for all units
-                    waveforms_all_folder = (
+                    waveforms_scratch_folder = (
                         scratch_folder / f"waveforms_all_{dataset_name}_{session_name}_{filter_option}"
+                    )
+                    waveforms_all_folder = (
+                        results_folder / f"waveforms_all_{dataset_name}_{session_name}_{filter_option}"
                     )
                     waveforms_all_folder.mkdir(exist_ok=True, parents=True)
 
@@ -275,7 +278,7 @@ if __name__ == "__main__":
                         we_dense = si.extract_waveforms(
                             recording,
                             sorting,
-                            folder=waveforms_all_folder / "waveforms_dense",
+                            folder=waveforms_scratch_folder / "waveforms_dense",
                             n_jobs=n_jobs,
                             overwrite=True,
                             max_spikes_per_unit=100,
@@ -317,7 +320,7 @@ if __name__ == "__main__":
                         we_dense_di = si.extract_waveforms(
                             recording_di,
                             sorting_di,
-                            folder=waveforms_all_folder / "waveforms_dense_di",
+                            folder=waveforms_scratch_folder / "waveforms_dense_di",
                             n_jobs=n_jobs,
                             overwrite=True,
                             max_spikes_per_unit=100,
