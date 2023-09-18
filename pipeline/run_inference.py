@@ -102,32 +102,34 @@ if __name__ == "__main__":
         inference_n_jobs = int(sys.argv[3])
         inference_predict_workers = int(sys.argv[4])
 
-    json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
+    session_dict = all_sessions
+    filter_options = FILTER_OPTIONS
 
-    if len(json_files) > 0:
+    json_files = [p for p in data_folder.iterdir() if p.name.endswith(".json")]
+    if len(json_files) == 1:
         print(f"Found {len(json_files)} JSON config")
         session_dict = {}
         # each json file contains a session to run
-        for json_file in json_files:
-            with open(json_file, "r") as f:
-                config = json.load(f)
-                probe = config["probe"]
-                if probe not in session_dict:
-                    session_dict[probe] = []
-                session = config["session"]
-                assert (
-                    session in all_sessions[probe]
-                ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
-                session_dict[probe].append(session)
-                if "filter_options" in config:
-                    filter_options = [config["filter_options"]]
-                else:
-                    filter_options = FILTER_OPTIONS
-    else:
-        session_dict = all_sessions
+        json_file = json_files[0]
+        with open(json_file, "r") as f:
+            config = json.load(f)
+            probe = config["probe"]
+            if probe not in session_dict:
+                session_dict[probe] = []
+            session = config["session"]
+            assert (
+                session in all_sessions[probe]
+            ), f"{session} is not a valid session. Valid sessions for {probe} are:\n{all_sessions[probe]}"
+            session_dict[probe].append(session)
+            if "filter_options" in config:
+                filter_options = [config["filter_options"]]
+            else:
+                filter_options = FILTER_OPTIONS
+    elif len(json_files) > 1:
+        print("Only 1 JSON config file allowed, using default sessions")
 
-    print(session_dict)
-
+    print(f"Sessions:\n{session_dict}")
+    print(f"Filter options:\n{filter_options}")
     si.set_global_job_kwargs(**job_kwargs)
 
     print(f"Tensorflow GPU status: {tf.config.list_physical_devices('GPU')}")
