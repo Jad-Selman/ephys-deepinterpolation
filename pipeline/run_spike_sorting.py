@@ -443,11 +443,11 @@ if __name__ == "__main__":
                         )
                     new_matched_rows["agreement_score"] = agreement_scores
                     for metric in qm_matched.columns:
-                        new_rows[metric] = qm_matched[metric].values
-                        new_rows[f"{metric}_di"] = qm_matched_di[metric].values
+                        new_matched_rows[metric] = qm_matched[metric].values
+                        new_matched_rows[f"{metric}_di"] = qm_matched_di[metric].values
                     for metric in tm_matched.columns:
-                        new_rows[metric] = tm_matched[metric].values
-                        new_rows[f"{metric}_di"] = tm_matched_di[metric].values
+                        new_matched_rows[metric] = tm_matched[metric].values
+                        new_matched_rows[f"{metric}_di"] = tm_matched_di[metric].values
                     # append new entries
                     matched_unit_level_results = pd.concat(
                         [matched_unit_level_results, pd.DataFrame(new_matched_rows)], ignore_index=True
