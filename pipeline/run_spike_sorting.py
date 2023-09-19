@@ -293,7 +293,7 @@ if __name__ == "__main__":
                             sparsity=sparsity,
                         )
                         # remove dense folder
-                        shutil.rmtree(waveforms_all_folder / "waveforms_dense")
+                        shutil.rmtree(waveforms_scratch_folder / "waveforms_dense")
 
                         print("\t\tCompute NO DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all)
@@ -335,7 +335,7 @@ if __name__ == "__main__":
                             sparsity=sparsity_di,
                         )
                         # remove dense folder
-                        shutil.rmtree(waveforms_all_folder / "waveforms_dense_di")
+                        shutil.rmtree(waveforms_scratch_folder / "waveforms_dense_di")
 
                         print("\t\tCompute DI spike amplitudes")
                         _ = spost.compute_spike_amplitudes(we_all_di)
